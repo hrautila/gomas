@@ -1,5 +1,5 @@
 GO Matrix Algebra Subroutines
-=============================
+-----------------------------
 
 Almost complete implementation of BLAS level 1, 2 and 3 routines for double precision floating point.
 All computation is in place. The implementation supports matrix views (submatrices of larger matrices)

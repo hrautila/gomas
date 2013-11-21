@@ -26,6 +26,13 @@ func imin(a, b int) int {
     return b
 }
 
+func imax(a, b int) int {
+    if a > b {
+        return a
+    }
+    return b
+}
+
 // Local Variables:
 // tab-width: 4
 // indent-tabs-mode: nil

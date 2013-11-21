@@ -73,23 +73,19 @@ func mtranspose(A, B *cmat.FloatMatrix, M, N int) {
 
 
 func Copy(A, B *cmat.FloatMatrix, confs ...*gomas.Config) *gomas.Error {
-    conf := gomas.DefaultConf()
-    if len(confs) > 0 {
-        conf = confs[0]
-    }
     ar, ac := A.Size()
     br, bc := B.Size()
     avec := ar == 1 || ac == 1
     bvec := br == 1 || bc == 1
     if avec && bvec {
         if A.Len() <= B.Len() {
-            return conf.LastErr.Set(gomas.ESIZE, "Copy")
+            return gomas.NewError(gomas.ESIZE, "Copy")
         }
         vcopy(A, B, A.Len())
         return nil
     }
     if ar != br || ac != bc {
-        return  conf.LastErr.Set(gomas.ESIZE, "Copy")
+        return  gomas.NewError(gomas.ESIZE, "Copy")
     }
     mcopy(A, B, ar, ac)
     return nil
@@ -97,14 +93,10 @@ func Copy(A, B *cmat.FloatMatrix, confs ...*gomas.Config) *gomas.Error {
 
 
 func Transpose(A, B *cmat.FloatMatrix, confs ...*gomas.Config) *gomas.Error {
-    conf := gomas.DefaultConf()
-    if len(confs) > 0 {
-        conf = confs[0]
-    }
     ar, ac := A.Size()
     br, bc := B.Size()
     if ar != bc || ac != br {
-        return conf.LastErr.Set(gomas.ESIZE, "Transpose")
+        return gomas.NewError(gomas.ESIZE, "Transpose")
     }
     mtranspose(A, B, br, bc)
     return nil

@@ -18,6 +18,7 @@ const (
     ENOTSQUARE
     ESIZE_PIVOTS
     ESINGULAR
+    EWORK
 )
 
 var errors = map[int]string {
@@ -28,6 +29,7 @@ var errors = map[int]string {
     ENOTSQUARE: "Not a square matrix",
     ESIZE_PIVOTS: "Pivot array too small",
     ESINGULAR: "Zero on diagonal",
+    EWORK: "Work space too small",
 }
 
 type Error struct {
@@ -35,8 +37,8 @@ type Error struct {
     Err int
     // operator
     Op string
-    // possible invalid value location
-    I, J int
+    // additional information
+    Info int
 }
 
 func (e *Error) Error() string {
@@ -46,36 +48,21 @@ func (e *Error) Error() string {
     if !ok {
         desc = "Unknwon error code"
     }
-    return fmt.Sprintf("%d [%s]: %s, (%d,%d)", e.Err, e.Op, desc, e.I, e.J);
+    return fmt.Sprintf("%d [%s] %d: %s", e.Err, e.Op, e.Info, desc);
 }
 
-func NewError(err int, op string, ijs... int) *Error {
-    var i, j int
-    switch len(ijs) {
-    case 2:
-        i = ijs[0]
-        j = ijs[1]
-    case 1:
-        i = ijs[0]
-        j = i
+func NewError(err int, op string, infos... int) *Error {
+    info := 0
+    if len(infos) > 0 {
+        info = infos[0]
     }
-    return &Error{err, op, i, j}
+    return &Error{err, op, info}
 }
 
-func (e *Error) Set(err int, op string, ijs... int) *Error {
-    var i, j int
-    switch (len(ijs)) {
-    case 2:
-        i = ijs[0]
-        j = ijs[1]
-    case 1:
-        i = ijs[0]
-        j = i
-    }
+func (e *Error) Set(err int, op string, info int) *Error {
     e.Err = err
     e.Op = op
-    e.I = i
-    e.J = j
+    e.Info = info
     return e
 }
 

@@ -12,9 +12,8 @@ import (
     "github.com/hrautila/gomas"
     "github.com/hrautila/gomas/util"
     "github.com/hrautila/gomas/blasd"
-    //"errors"
-    "fmt"
     "math"
+    //"fmt"
 )
 
 func unblockedLowerCHOL(A *cmat.FloatMatrix, flags int, nr int) (err *gomas.Error) {
@@ -36,8 +35,7 @@ func unblockedLowerCHOL(A *cmat.FloatMatrix, flags int, nr int) (err *gomas.Erro
         aval := a11.Get(0, 0)
         if aval < 0.0 {
             if err == nil {
-                err = gomas.NewError(gomas.ENEGATIVE, "DecomposeCHOL",
-                    m(&ATL)+nr, m(&ATL)+nr)
+                err = gomas.NewError(gomas.ENEGATIVE, "DecomposeCHOL", m(&ATL)+nr)
             }
         } else {
             a11.Set(0, 0, math.Sqrt(aval))
@@ -74,8 +72,7 @@ func unblockedUpperCHOL(A *cmat.FloatMatrix, flags int, nr int) (err *gomas.Erro
         aval := a11.Get(0, 0)
         if aval < 0.0 {
             if err == nil {
-                err = gomas.NewError(gomas.ENEGATIVE, "DecomposeCHOL",
-                    nr+m(&ATL), nr+m(&ATL))
+                err = gomas.NewError(gomas.ENEGATIVE, "DecomposeCHOL", nr+m(&ATL))
             }
         } else {
             a11.Set(0, 0, math.Sqrt(aval))
@@ -129,7 +126,6 @@ func blockedCHOL(A *cmat.FloatMatrix, flags int, conf *gomas.Config) *gomas.Erro
             blasd.UpdateSym(&A22, &A12, -1.0, 1.0, gomas.UPPER|gomas.TRANSA, conf)
         }
         if err != nil && firstErr == nil {
-            fmt.Printf("error n(&ATL)=%d: %s\n", n(&ATL), err)
             firstErr = err
         }
 

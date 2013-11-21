@@ -35,7 +35,7 @@ func unblockedLUnoPiv(A *cmat.FloatMatrix, conf *gomas.Config) *gomas.Error {
         // a21 = a21/a11
         blasd.InvScale(&a21, a11.Get(0, 0))
         // A22 = A22 - a21*a12
-        blasd.MVUpdate(&A22, &a21, &a12, -1.0, gomas.NONE)
+        blasd.MVUpdate(&A22, &a21, &a12, -1.0)
 
         util.Continue3x3to2x2(
             &ATL, &ATR,
@@ -132,7 +132,7 @@ func unblockedLUpiv(A *cmat.FloatMatrix, p *Pivots, offset int, conf *gomas.Conf
         if aval == 0.0 {
             if err == nil {
                 ij := m(&ATL) + p1[0] - 1
-                err = gomas.NewError(gomas.ESINGULAR, "DecomposeLU", ij, ij)
+                err = gomas.NewError(gomas.ESINGULAR, "DecomposeLU", ij)
             }
         } else {
             blasd.InvScale(&a21, a11.Get(0, 0))

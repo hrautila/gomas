@@ -205,7 +205,7 @@ void __d_trsv_recursive(mvec_t *X, const mdata_t *A,
 
 extern
 void __d_update_ger_recursive(mdata_t *A, const mvec_t *Y, const mvec_t *X,
-                              double alpha, int flags, int N, int M);
+                              double alpha, int N, int M);
 
 extern
 void __d_update_trmv_recursive(mdata_t *A, const mvec_t *Y, const mvec_t *X,
@@ -310,7 +310,7 @@ void __solve_blk_recursive(mdata_t *B, const mdata_t *A, DTYPE alpha,
 
 extern
 void __update_ger_recursive(mdata_t *A, const mvec_t *X, const mvec_t *Y,
-                            DTYPE alpha, int flags, int N, int M);
+                            DTYPE alpha, int N, int M);
 
 extern
 void __update_trmv_unb(mdata_t *A, const mvec_t *X, const mvec_t *Y,

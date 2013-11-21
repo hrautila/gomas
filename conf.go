@@ -21,14 +21,14 @@ type Config struct {
     LastErr Error
 }
 
-var __config Config = Config{64, 96, 160, 32, Error{0, "", 0, 0}}
+var __config Config = Config{64, 96, 160, 32, Error{0, "", 0}}
 
 func DefaultConf() *Config {
     return &__config
 } 
 
 func NewConf() *Config {
-    return &Config{64, 96, 160, 32, Error{0, "", 0, 0}}
+    return &Config{64, 96, 160, 32, Error{0, "", 0}}
 }
 
 // Local Variables:

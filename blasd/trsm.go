@@ -42,6 +42,10 @@ func SolveTrm(B, A *cmat.FloatMatrix, alpha float64, bits int, confs... *gomas.C
         conf = confs[0]
     }
 
+    if B.Len() == 0 || A.Len() == 0 {
+        return nil
+    }
+
     ok := true
     ar, ac := A.Size()
     br, bc := B.Size()

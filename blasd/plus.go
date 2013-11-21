@@ -36,6 +36,9 @@ func plus(Ac, Bc *cmat.FloatMatrix, alpha, beta float64, bits, S, L, R, E int)  
  */
 func Plus(A, B *cmat.FloatMatrix, alpha, beta float64, bits int, confs... *gomas.Config) *gomas.Error {
     ok := true
+    if A.Len() == 0 || B.Len() == 0 {
+        return nil
+    }
     ar, ac := A.Size()
     br, bc := B.Size()
     L := ac

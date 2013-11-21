@@ -49,6 +49,9 @@ func Mult(Cc, A, B *cmat.FloatMatrix, alpha, beta float64, bits int, confs... *g
         conf = confs[0]
     }
 
+    if A.Len() == 0 || B.Len() == 0 {
+        return nil
+    }
     ok := true
     cr, cc := Cc.Size()
     ar, ac := A.Size()

@@ -54,6 +54,10 @@ func MultSym(Cc, A, B *cmat.FloatMatrix, alpha, beta float64, bits int, confs...
         conf = confs[0]
     }
 
+    // if A or B has zero columns or rows
+    if A.Len() == 0 || B.Len() == 0 {
+        return nil
+    }
     ok := true
     cr, cc := Cc.Size()
     ar, ac := A.Size()

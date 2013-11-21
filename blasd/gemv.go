@@ -70,6 +70,9 @@ func MVMult(Y, A, X *cmat.FloatMatrix, alpha, beta float64, bits int, confs... *
     if !ok {
         return gomas.NewError(gomas.ESIZE, "MVMult")
     }
+    if beta != 1.0 {
+        vscal(Y, beta, ny)
+    }
     gemv(Y, A, X, alpha, beta, bits, 0, nx, 0, ny)
     return nil
 }

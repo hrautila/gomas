@@ -8,9 +8,10 @@ import (
 	"github.com/hrautila/gomas/blasd"
 )
 
-const N = 911
 
 func TestDSyr2(t *testing.T) {
+    
+    const N = 911
 
 	A := cmat.NewMatrix(N, N)
     X := cmat.NewMatrix(N, 1)
@@ -27,8 +28,8 @@ func TestDSyr2(t *testing.T) {
     B.Copy(A)
 
 	// B = A*B
-	blasd.MVUpdate(B, X, Y, 1.0, gomas.NONE)
-	blasd.MVUpdate(B, Y, X, 1.0, gomas.NONE)
+	blasd.MVUpdate(B, X, Y, 1.0)
+	blasd.MVUpdate(B, Y, X, 1.0)
     cmat.TriL(B, cmat.NONE)
 	blasd.MVUpdate2Sym(A, X, Y, 1.0, gomas.LOWER)
     ok := B.AllClose(A)
@@ -41,8 +42,8 @@ func TestDSyr2(t *testing.T) {
 	A.SetFrom(zeromean, cmat.UPPER)
     cmat.TriU(A, cmat.NONE)
     B.Copy(A)
-	blasd.MVUpdate(B, X, Y, 1.0, gomas.NONE)
-	blasd.MVUpdate(B, Y, X, 1.0, gomas.NONE)
+	blasd.MVUpdate(B, X, Y, 1.0)
+	blasd.MVUpdate(B, Y, X, 1.0)
     cmat.TriU(B, cmat.NONE)
 	blasd.MVUpdate2Sym(A, X, Y, 1.0, gomas.UPPER)
     ok = B.AllClose(A)

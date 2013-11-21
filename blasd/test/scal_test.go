@@ -7,9 +7,10 @@ import (
 	"github.com/hrautila/gomas/blasd"
 )
 
-const N = 911
 
 func TestDVecScal(t *testing.T) {
+
+    const N = 911
 
     X := cmat.NewMatrix(N, 1)
     Y := cmat.NewMatrix(N, 1)

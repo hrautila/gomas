@@ -8,11 +8,12 @@ import (
 	"github.com/hrautila/gomas/blasd"
 )
 
-const N = 31
-const K = 4
 
 func TestDTrsm1(t *testing.T) {
 	nofail := true
+
+    const N = 31
+    const K = 4
 
 	A := cmat.NewMatrix(N, N)
 	B := cmat.NewMatrix(N, K)
@@ -45,6 +46,9 @@ func TestDTrsm1(t *testing.T) {
 
 
 func TestDTrms2(t *testing.T) {
+    const N = 31
+    const K = 4
+
 	nofail := true
 
 	A := cmat.NewMatrix(N, N)
@@ -76,6 +80,8 @@ func TestDTrms2(t *testing.T) {
 
 
 func TestDTrsm3(t *testing.T) {
+    const N = 31
+    const K = 4
 
 	A := cmat.NewMatrix(N, N)
 	B := cmat.NewMatrix(N, K)
@@ -102,6 +108,8 @@ func TestDTrsm3(t *testing.T) {
 }
 
 func TestDTrsm4(t *testing.T) {
+    const N = 31
+    const K = 4
 
 	A := cmat.NewMatrix(N, N)
 	B := cmat.NewMatrix(K, N)

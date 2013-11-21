@@ -8,9 +8,10 @@ import (
 	"github.com/hrautila/gomas/blasd"
 )
 
-const N = 911
 
 func TestDSyr1(t *testing.T) {
+    
+    const N = 911
 
 	A := cmat.NewMatrix(N, N)
     X := cmat.NewMatrix(N, 1)
@@ -24,7 +25,7 @@ func TestDSyr1(t *testing.T) {
     B.Copy(A)
 
 	// B = A*B
-	blasd.MVUpdate(B, X, X, 1.0, gomas.NONE)
+	blasd.MVUpdate(B, X, X, 1.0)
     cmat.TriL(B, cmat.NONE)
 	blasd.MVUpdateSym(A, X, 1.0, gomas.LOWER)
     ok := B.AllClose(A)
@@ -33,7 +34,7 @@ func TestDSyr1(t *testing.T) {
 	A.SetFrom(zeromean, cmat.UPPER)
     cmat.TriU(A, cmat.NONE)
     B.Copy(A)
-	blasd.MVUpdate(B, X, X, 1.0, gomas.NONE)
+	blasd.MVUpdate(B, X, X, 1.0)
     cmat.TriU(B, cmat.NONE)
 	blasd.MVUpdateSym(A, X, 1.0, gomas.UPPER)
     ok = B.AllClose(A)
@@ -41,6 +42,8 @@ func TestDSyr1(t *testing.T) {
 }
 
 func TestDSyrOther(t *testing.T) {
+
+    const N = 911
 
     var vec, As, Bs cmat.FloatMatrix
     P := N/3
@@ -61,7 +64,7 @@ func TestDSyrOther(t *testing.T) {
         As.SubMatrix(A, i, i)
         Bs.SubMatrix(B, i, i)
         // update with normal and symmetric
-	    blasd.MVUpdate(&Bs, &vec, &vec, 1.0, gomas.NONE)
+	    blasd.MVUpdate(&Bs, &vec, &vec, 1.0)
 	    blasd.MVUpdateSym(&As, &vec, 1.0, gomas.UPPER)
     }
     // make normal update triangular and compare
@@ -78,7 +81,7 @@ func TestDSyrOther(t *testing.T) {
         As.SubMatrix(A, i, i)
         Bs.SubMatrix(B, i, i)
         // update with normal and symmetric
-	    blasd.MVUpdate(&Bs, &vec, &vec, 1.0, gomas.NONE)
+	    blasd.MVUpdate(&Bs, &vec, &vec, 1.0)
 	    blasd.MVUpdateSym(&As, &vec, 1.0, gomas.LOWER)
     }
     // make normal update triangular and compare

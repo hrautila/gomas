@@ -84,11 +84,11 @@ void __update_trmv_recursive(mdata_t *A, const mvec_t *X, const mvec_t *Y,
     __subvector(&x0, X, 0);
     __subvector(&y0, Y, nd/2);
     __subblock(&A0, A, 0, nd/2);
-    __update_ger_recursive(&A0, &x0, &y0, alpha, flags, N-nd/2, nd/2);
+    __update_ger_recursive(&A0, &x0, &y0, alpha, N-nd/2, nd/2);
   } else {
     __subvector(&x0, X, nd/2);
     __subblock(&A0, A, nd/2, 0);
-    __update_ger_recursive(&A0, &x0, &y0, alpha, flags, nd/2, M-nd/2);
+    __update_ger_recursive(&A0, &x0, &y0, alpha, nd/2, M-nd/2);
   }
 
   __subvector(&y0, Y, nd/2);

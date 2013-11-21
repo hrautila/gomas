@@ -15,7 +15,7 @@ import "unsafe"
 import "github.com/hrautila/cmat"
 import "github.com/hrautila/gomas"
 
-func ger(A, X, Y *cmat.FloatMatrix, alpha float64, bits, N, M int) error {
+func ger(A, X, Y *cmat.FloatMatrix, alpha float64, N, M int) error {
     var Am C.mdata_t
     var Xm, Ym C.mvec_t
     
@@ -40,12 +40,12 @@ func ger(A, X, Y *cmat.FloatMatrix, alpha float64, bits, N, M int) error {
         (*C.mdata_t)(unsafe.Pointer(&Am)), 
         (*C.mvec_t)(unsafe.Pointer(&Xm)),
         (*C.mvec_t)(unsafe.Pointer(&Ym)), 
-        C.double(alpha), C.int(bits), C.int(N), C.int(M))
+        C.double(alpha),  C.int(N), C.int(M))
     return nil
 }
 
 
-func MVUpdate(A, X, Y *cmat.FloatMatrix, alpha float64, bits int, confs... *gomas.Config) *gomas.Error {
+func MVUpdate(A, X, Y *cmat.FloatMatrix, alpha float64, confs... *gomas.Config) *gomas.Error {
     ar, ac := A.Size()
     yr, yc := Y.Size()
     xr, xc := X.Size()
@@ -60,7 +60,7 @@ func MVUpdate(A, X, Y *cmat.FloatMatrix, alpha float64, bits int, confs... *goma
     if  ac != ny || ar != nx {
         return gomas.NewError(gomas.ESIZE, "MVUpdate")
     }
-    ger(A, X, Y, alpha, bits, ny, nx)
+    ger(A, X, Y, alpha, ny, nx)
     return nil
 }
 

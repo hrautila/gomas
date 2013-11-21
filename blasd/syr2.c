@@ -39,18 +39,18 @@ void __update_syr2_recursive(mdata_t *A, const mvec_t *X, const mvec_t *Y,
     __subvector(&x0, X, 0);
     __subvector(&y0, Y, N/2);
     __subblock(&A0, A, 0, N/2);
-    __update_ger_recursive(&A0, &x0, &y0, alpha, flags, N-N/2, N/2);
+    __update_ger_recursive(&A0, &x0, &y0, alpha, N-N/2, N/2);
     __subvector(&x0, X, N/2);
     __subvector(&y0, Y, 0);
-    __update_ger_recursive(&A0, &y0, &x0, alpha, flags, N-N/2, N/2);
+    __update_ger_recursive(&A0, &y0, &x0, alpha, N-N/2, N/2);
   } else {
     __subvector(&y0, Y, 0);
     __subvector(&x0, X, N/2);
     __subblock(&A0, A, N/2, 0);
-    __update_ger_recursive(&A0, &x0, &y0, alpha, flags, N/2, N-N/2);
+    __update_ger_recursive(&A0, &x0, &y0, alpha, N/2, N-N/2);
     __subvector(&y0, Y, N/2);
     __subvector(&x0, X, 0);
-    __update_ger_recursive(&A0, &y0, &x0, alpha, flags, N/2, N-N/2);
+    __update_ger_recursive(&A0, &y0, &x0, alpha, N/2, N-N/2);
   }
 
   __subvector(&y0, Y, N/2);

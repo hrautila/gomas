@@ -105,7 +105,7 @@ void __update1axpy(mdata_t *A, const mvec_t *X, const mvec_t *Y, DTYPE alpha, in
  * Unblocked update of triangular (M == N) and trapezoidial (M != N) matrix.
  */
 void __update_ger_unb(mdata_t *A, const mvec_t *X, const mvec_t *Y,
-                       DTYPE alpha, int flags, int N, int M)
+                       DTYPE alpha, int N, int M)
 {
   mvec_t y0;
   mdata_t A0;
@@ -126,14 +126,14 @@ void __update_ger_unb(mdata_t *A, const mvec_t *X, const mvec_t *Y,
 }
 
 void __update_ger_recursive(mdata_t *A, const mvec_t *X, const mvec_t *Y,
-                            DTYPE alpha, int flags, int N, int M)
+                            DTYPE alpha, int N, int M)
 {
   mvec_t x0, y0;
   mdata_t A0;
   int nd = min(M, N);
 
   if (M < MIN_MVEC_SIZE || N < MIN_MVEC_SIZE) {
-    __update_ger_unb(A, X, Y, alpha, flags, N, M);
+    __update_ger_unb(A, X, Y, alpha, N, M);
     return;
   }
 
@@ -141,23 +141,23 @@ void __update_ger_recursive(mdata_t *A, const mvec_t *X, const mvec_t *Y,
   __subvector(&x0, X, 0);
   __subvector(&y0, Y, 0);
   __subblock(&A0, A, 0, 0);
-  __update_ger_recursive(&A0, &x0, &y0, alpha, flags, N/2, M/2);
+  __update_ger_recursive(&A0, &x0, &y0, alpha, N/2, M/2);
 
   //printf("update 2. block... [%d,0] - [%d,%d]\n", M/2, M-M/2, N/2);
   __subvector(&x0, X, M/2);
   __subblock(&A0, A, M/2, 0);
-  __update_ger_recursive(&A0, &x0, &y0, alpha, flags, N/2, M-M/2);
+  __update_ger_recursive(&A0, &x0, &y0, alpha, N/2, M-M/2);
 
   //printf("update 3. block... [0,%d] - [%d,%d]\n", N/2, M/2, N-N/2);
   __subvector(&x0, X, 0);
   __subvector(&y0, Y, N/2);
   __subblock(&A0, A, 0, N/2);
-  __update_ger_recursive(&A0, &x0, &y0, alpha, flags, N-N/2, M/2);
+  __update_ger_recursive(&A0, &x0, &y0, alpha, N-N/2, M/2);
 
   //printf("update 4. block... [%d,%d] - [%d,%d]\n", M/2, N/2, M-M/2, N-N/2);
   __subvector(&x0, X, M/2);
   __subblock(&A0, A, M/2, N/2);
-  __update_ger_recursive(&A0, &x0, &y0, alpha, flags, N-N/2, M-M/2);
+  __update_ger_recursive(&A0, &x0, &y0, alpha, N-N/2, M-M/2);
 }
 
 

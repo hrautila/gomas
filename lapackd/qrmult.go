@@ -11,6 +11,7 @@ import (
     "github.com/hrautila/cmat"
     "github.com/hrautila/gomas"
     "github.com/hrautila/gomas/util"
+    "github.com/hrautila/gomas/blasd"
     //"fmt"
 )
 
@@ -207,7 +208,7 @@ func blockedMultQLeft(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Con
     var CT, CB, C0, C1, C2 cmat.FloatMatrix
     var tT, tB cmat.FloatMatrix
     var t0, tau1, t2  cmat.FloatMatrix
-    var Wrk, Tw cmat.FloatMatrix
+    var Wrk, W0, Tw, Twork cmat.FloatMatrix
 
     var Aref *cmat.FloatMatrix
     var pAdir, pAstart, pDir, pStart util.Direction
@@ -247,8 +248,8 @@ func blockedMultQLeft(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Con
     transpose := flags & gomas.TRANS != 0
 
     // intermediate reflector at start of workspace
-    Twork := cmat.MakeMatrix(nb, nb, W.Data())
-    W0 := cmat.MakeMatrix(n(C), nb, W.Data()[Twork.Len():])
+    Twork.SetBuf(nb, nb, nb, W.Data())
+    W0.SetBuf(n(C), nb, n(C), W.Data()[Twork.Len():])
 
     for m(Aref) > 0 && n(Aref) > 0 {
         util.Repartition2x2to3x3(&ATL,
@@ -267,12 +268,12 @@ func blockedMultQLeft(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Con
         // --------------------------------------------------------
         // build block reflector from current block
         util.Merge2x1(&AL, &A11, &A21)
-        Tw.SubMatrix(Twork, 0, 0, bsz, bsz)
+        Tw.SubMatrix(&Twork, 0, 0, bsz, bsz)
         unblkQRBlockReflector(&Tw, &AL, &tau1)
                                                          
         // compute: Q*T.C == C - Y*(C.T*Y*T).T  transpose == true
         //          Q*C   == C - C*Y*T*Y.T      transpose == false
-        Wrk.SubMatrix(W0, 0, 0, n(&C1), bsz)
+        Wrk.SubMatrix(&W0, 0, 0, n(&C1), bsz)
         updateWithQTLeft(&C1, &C2, &A11, &A21, &Tw, &Wrk, nb, transpose, conf)
         // --------------------------------------------------------
         util.Continue3x3to2x2(
@@ -301,7 +302,7 @@ func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Co
     var CL, CR, C0, C1, C2 cmat.FloatMatrix
     var tT, tB cmat.FloatMatrix
     var t0, tau1, t2  cmat.FloatMatrix
-    var Wrk, Tw cmat.FloatMatrix
+    var W0, Wrk, Tw, Twork cmat.FloatMatrix
 
     var Aref *cmat.FloatMatrix
     var pAdir, pAstart, pDir, pStart, pCstart, pCdir util.Direction
@@ -335,8 +336,8 @@ func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Co
     }
 
     // intermediate reflector at start of workspace
-    Twork := cmat.MakeMatrix(nb, nb, W.Data())
-    W0 := cmat.MakeMatrix(m(C), nb, W.Data()[Twork.Len():])
+    Twork.SetBuf(nb, nb, nb, W.Data())
+    W0.SetBuf(m(C), nb, m(C), W.Data()[Twork.Len():])
 
     util.Partition2x2(
         &ATL, &ATR,
@@ -365,12 +366,12 @@ func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Co
         // --------------------------------------------------------
         // build block reflector from current block
         util.Merge2x1(&AL, &A11, &A21)
-        Tw.SubMatrix(Twork, 0, 0, bsz, bsz)
+        Tw.SubMatrix(&Twork, 0, 0, bsz, bsz)
         unblkQRBlockReflector(&Tw, &AL, &tau1)
 
         // compute: C*Q.T == C - C*(Y*T*Y.T).T = C - C*Y*T.T*Y.T
         //          C*Q   == C - C*Y*T*Y.T
-        Wrk.SubMatrix(W0, 0, 0, m(&C1), bsz)
+        Wrk.SubMatrix(&W0, 0, 0, m(&C1), bsz)
         updateWithQTRight(&C1, &C2, &A11, &A21, &Tw, &Wrk, nb, transpose, conf)
         // --------------------------------------------------------
         util.Continue3x3to2x2(
@@ -447,6 +448,85 @@ func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
         } else {
             blockedMultQLeft(C, A, tau, W, flags, conf)
         }
+    }
+    return err
+}
+
+
+/*
+ * Solve a system of linear equations A*X = B with general M-by-N
+ * matrix A using the QR factorization computed by DecomposeQR().
+ *
+ * If flags&TRANS != 0:
+ *   find the minimum norm solution of an overdetermined system A.T * X = B.
+ *   i.e min ||X|| s.t A.T*X = B
+ *
+ * Otherwise:
+ *   find the least squares solution of an overdetermined system, i.e.,
+ *   solve the least squares problem: min || B - A*X ||.
+ *
+ * Arguments:
+ *  B     On entry, the right hand side N-by-P matrix B. On exit, the solution matrix X.
+ *
+ *  A     The elements on and above the diagonal contain the min(M,N)-by-N upper
+ *        trapezoidal matrix R. The elements below the diagonal with the vector 'tau', 
+ *        represent the ortogonal matrix Q as product of elementary reflectors.
+ *        Matrix A and T are as returned by DecomposeQR()
+ *
+ *  tau   The vector of N scalar coefficients that together with trilu(A) define
+ *        the ortogonal matrix Q as Q = H(1)H(2)...H(N)
+ *
+ *  W     Workspace, size required returned WorksizeMultQ().
+ *
+ *  flags Indicator flags
+ *
+ *  conf  Optinal blocking configuration. If not given default will be used. Unblocked
+ *        invocation is indicated with conf.LB == 0.
+ *
+ * Compatible with lapack.GELS (the m >= n part)
+ */
+func SolveQR(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+    var err *gomas.Error = nil
+    var R, BT cmat.FloatMatrix
+
+    conf := gomas.DefaultConf()
+    if len(confs) > 0 {
+        conf = confs[0]
+    }
+
+    msz := WorksizeMultQ(B, gomas.LEFT, conf)
+    if W.Len() < msz {
+        return gomas.NewError(gomas.EWORK, "SolveQR", msz)
+    }
+
+    if flags & gomas.TRANS != 0 {
+        // Solve overdetermined system A.T*X = B
+
+        // B' = R.-1*B
+        R.SubMatrix(A, 0, 0, n(A), n(A))
+        BT.SubMatrix(B, 0, 0, n(A), n(B))
+        err = blasd.SolveTrm(&BT, &R, 1.0, gomas.LEFT|gomas.UPPER|gomas.TRANSA, conf)
+        
+        // Clear bottom part of B
+        BT.SubMatrix(B, n(A), 0)
+        BT.SetFrom(cmat.NewFloatConstSource(0.0))
+        
+        // X = Q*B'
+        err = MultQ(B, A, tau, W, gomas.LEFT, conf)
+    } else {
+        // solve least square problem min ||A*X - B||
+
+        // B' = Q.T*B
+        err = MultQ(B, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
+        if err != nil {
+            return err
+        }
+
+        // X = R.-1*B'
+        R.SubMatrix(A, 0, 0, n(A), n(A))
+        BT.SubMatrix(B, 0, 0, n(A), n(B))
+        err = blasd.SolveTrm(&BT, &R, 1.0, gomas.LEFT|gomas.UPPER, conf)
+
     }
     return err
 }

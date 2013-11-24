@@ -31,6 +31,14 @@ func NewConf() *Config {
     return &Config{64, 96, 160, 32, Error{0, "", 0}}
 }
 
+func CurrentConf(confs... *Config) *Config {
+    if len(confs) > 0 {
+        return confs[0]
+    }
+    return &__config
+}
+
+        
 // Local Variables:
 // tab-width: 4
 // indent-tabs-mode: nil

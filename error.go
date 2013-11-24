@@ -19,6 +19,7 @@ const (
     ESIZE_PIVOTS
     ESINGULAR
     EWORK
+    ESMALL
 )
 
 var errors = map[int]string {
@@ -30,6 +31,7 @@ var errors = map[int]string {
     ESIZE_PIVOTS: "Pivot array too small",
     ESINGULAR: "Zero on diagonal",
     EWORK: "Work space too small",
+    ESMALL: "Argument matrix too small.", 
 }
 
 type Error struct {

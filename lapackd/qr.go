@@ -173,7 +173,6 @@ func updateWithQTLeft(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, nb int, transpose 
 // C1 is K*nb, C2 is K*P, Y1 is nb*nb trilu, Y2 is P*nb, T is nb*nb
 // W = K*nb
 func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, nb int, transpose bool, conf *gomas.Config) {
-
     // -- compute: W = C*Y = C1*Y1 + C2*Y2
 
     // W = C1
@@ -182,7 +181,6 @@ func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, nb int, transpose
     blasd.MultTrm(W, Y1, 1.0, gomas.LOWER|gomas.UNIT|gomas.RIGHT, conf)
     // W = W + C2*Y2
     blasd.Mult(W, C2, Y2, 1.0, 1.0, gomas.NONE, conf)
-
     // --- here: W == C*Y ---
 
     tflags := gomas.UPPER|gomas.RIGHT 
@@ -191,7 +189,6 @@ func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, nb int, transpose
     }
     // W = W*T or W*T.T
     blasd.MultTrm(W, T, 1.0, tflags, conf)
-
     // --- here: W == C*Y*T or C*Y*T.T ---
 
     // C2 = C2 - W*Y2.T
@@ -199,10 +196,8 @@ func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, nb int, transpose
     // C1 = C1 - W*Y1.T
     //  W = W*Y1 
     blasd.MultTrm(W, Y1, 1.0, gomas.LOWER|gomas.UNIT|gomas.RIGHT|gomas.TRANSA, conf)
-    
     // C1 = C1 - W
     blasd.Plus(C1, W, 1.0, -1.0, gomas.NONE)
-
     // --- here: C = (I - Y*T*Y.T).T * C ---
 }
 
@@ -234,22 +229,20 @@ func DecomposeQR(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Err
     if len(confs) > 0 {
         conf = confs[0]
     }
-    if W == nil {
-        return gomas.NewError(gomas.EWORK, "DecomposeQR", WorksizeQR(A, conf))
+    wsz := WorksizeQR(A, conf)
+    if W == nil || W.Len() < wsz {
+        return gomas.NewError(gomas.EWORK, "DecomposeQR", wsz)
     }
+
     if conf.LB == 0 || n(A) <= conf.LB {
         unblockedQR(A, tau, W)
     } else {
-        if W == nil {
-            W = cmat.NewMatrix(n(A), conf.LB)
-        } else if W.Len() < n(A)*conf.LB {
-            return gomas.NewError(gomas.EWORK, "DecomposeQR")
-        }
+        var Twork, Wrk cmat.FloatMatrix
         // block reflector T in first LB*LB elements in workspace
         // the rest, n(A)-LB*LB, is workspace for intermediate matrix operands
-        Twork := cmat.MakeMatrix(conf.LB, conf.LB, W.Data())
-        Wrk := cmat.MakeMatrix(n(A)-conf.LB, conf.LB, W.Data()[Twork.Len():])
-        blockedQR(A, tau, Twork, Wrk, conf)
+        Twork.SetBuf(conf.LB, conf.LB, -1, W.Data())
+        Wrk.SetBuf(n(A)-conf.LB, conf.LB, -1, W.Data()[Twork.Len():])
+        blockedQR(A, tau, &Twork, &Wrk, conf)
     }
     return err
 }

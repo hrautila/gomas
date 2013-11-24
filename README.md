@@ -1,5 +1,5 @@
 GO Matrix Algebra Subroutines
-=============================
+-----------------------------
 
 Almost complete implementation of BLAS level 1, 2 and 3 routines for double precision floating point.
 All computation is in place. The implementation supports matrix views (submatrices of larger matrices)
@@ -30,13 +30,13 @@ Supported functionality is:
 
   Blas level 1
 
-    ASum(X)             Sum of absolute values sum(|x|) (ASUM)
-    Axpy(Y, X, alpha)   Vector sum Y := alpha*X + Y (AXPY)
-    IAMax(X)            Index of absolute maximum value (IAMAX)
-    Norm2(X)            Vector norm sqrt(||x||^2) (NRM2)
-    Dot(X, Y)           Inner product (DOT)
-    Swap(X, Y)          Vector-vector swap (SWAP)
-    Scale(X, alpha)     Scaling of X (SCAL)
+    ASum(X)                                     Sum of absolute values sum(|x|) (ASUM)
+    Axpy(Y, X, alpha)                           Vector sum Y := alpha*X + Y (AXPY)
+    IAmax(X)                                    Index of absolute maximum value (IAMAX)
+    Nrm2(X)                                     Vector norm sqrt(||x||^2) (NRM2)
+    Dot(X, Y)                                   Inner product (DOT)
+    Swap(X, Y)                                  Vector-vector swap (SWAP)
+    Scale(X, alpha)                             Scaling of X (SCAL)
 
   Additional
 
@@ -49,17 +49,17 @@ Supported functionality is:
 
   Lapack
   
-    DecomposeCHOL(A, nb)                Cholesky factorization (DPOTRF)
-    DecomposeLUnoPiv(A, nb)             LU factorization without pivoting
-    DecomposeLU(A, pivots, nb)          LU factorization with pivoting (DGETRF)
-    SolveCHOL(B, A, flags)              Solve Cholesky factorized linear system (DPOTRS)
-    SolveLU(B, A, pivots, flags)        Solve LU factorized linear system (DGETRS)
+    DecomposeCHOL(A, conf)                      Cholesky factorization (DPOTRF)
+    DecomposeLUnoPiv(A, conf)                   LU factorization without pivoting
+    DecomposeLU(A, pivots, conf)                LU factorization with pivoting (DGETRF)
+    SolveCHOL(B, A, flags, conf)                Solve Cholesky factorized linear system (DPOTRS)
+    SolveLU(B, A, pivots, flags, conf)          Solve LU factorized linear system (DGETRS)
 
   Other
 
-    DefaultConf()             Get pointer to default blocking configuration 
-    NewConf()                 Create a new blocking configuration
-    NewError()                New error descriptor
+    DefaultConf()                               Get default blocking configuration 
+    NewConf()                                   Create a new blocking configuration
+    NewError(err, name)                         New error descriptor
 
 This is still WORK IN PROGRESS. Consider this as beta level code, at best. 
 

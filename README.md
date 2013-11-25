@@ -2,6 +2,7 @@ GO Matrix Algebra Subroutines
 -----------------------------
 
 Implementations of BLAS level 1, 2 and 3 routines and some LAPACK routines for double precision floating point.
+This package is rewrite of my MATOPS package using different matrix implementation.
 
 Some key ideas on implementation
 
@@ -13,13 +14,17 @@ Some key ideas on implementation
 - Higher level algorithms with libFLAME like implementation
 - Unblocked and blocked versions
 - Need to support parallelization
+- More Go/C like call interface
 
 At the moment there is no threading support for parallel execution of operations. 
 This is WORK IN PROGRESS. Consider this as beta level code, at best. 
 
 ### Some numbers 
 
-Performance of single threaded matrix-matrix multiplication (GEMM) 
+Performance of single threaded matrix-matrix multiplication (GEMM). Theoretical
+maximum performance of Ivy Bridge CPU is 8 double precision floating point operations
+per cpu cycle (4 addition, 4 multiplication). With peak performance 16.9034 Gflops
+and 2.4 GHz clock rate we get 7.04 operations/cycle, ~ 88% of theoretical maximum.
 
     CPU: Intel(R) Core(TM) i7-3630QM CPU @ 2.40GHz
 
@@ -33,7 +38,7 @@ Performance of single threaded matrix-matrix multiplication (GEMM)
     1600   16.7352   16.8270   16.9034 Gflops
   
 
-### BLAS
+### Blas
 
   Level 3
 

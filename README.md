@@ -1,16 +1,41 @@
 GO Matrix Algebra Subroutines
 -----------------------------
 
-Almost complete implementation of BLAS level 1, 2 and 3 routines for double precision floating point.
-All computation is in place. The implementation supports matrix views (submatrices of larger matrices)
-and parallel execution of matrix operations in multiple threads. 
+Implementations of BLAS level 1, 2 and 3 routines and some LAPACK routines for double precision floating point.
 
-Low level matrix operations primitives use 256bit and 128bit vectorization instructions when possible.
+Some key ideas on implementation
+
+- Good single threaded perfomance
+- No internal memory allocation
+- All operations in place. If workspace needed it must be provided explicitely.
+- No assembler code. 
+- Use SIMD instruction when available
+- Higher level algorithms with libFLAME like implementation
+- Unblocked and blocked versions
+- Need to support parallelization
+
 At the moment there is no threading support for parallel execution of operations. 
+This is WORK IN PROGRESS. Consider this as beta level code, at best. 
 
-Supported functionality is:
+### Some numbers 
 
-  Blas level 3
+Performance of single threaded matrix-matrix multiplication (GEMM) 
+
+    CPU: Intel(R) Core(TM) i7-3630QM CPU @ 2.40GHz
+
+     200   12.5294   13.8528   14.4928 Gflops
+     400   15.6345   16.2817   16.5653 Gflops
+     600   16.4003   16.7994   16.9798 Gflops
+     800   16.4187   16.6092   16.8357 Gflops
+    1000   16.4117   16.5573   16.6710 Gflops
+    1200   16.0345   16.5740   16.8028 Gflops
+    1400   16.5978   16.7548   16.8224 Gflops
+    1600   16.7352   16.8270   16.9034 Gflops
+  
+
+### BLAS
+
+  Level 3
 
     Mult(C, A, B, alpha, beta, flags)           General matrix-matrix multiplication  (GEMM)
     MultSymm(C, A, B, alpha, beta, flags)       Symmetric matrix-matrix multipication (SYMM)
@@ -19,7 +44,7 @@ Supported functionality is:
     UpdateSym(C, A, alpha, beta,flags)          Symmetric matrix rank-k update (SYRK)
     Update2Sym(C, A, B, alpha, beta, flags)     Symmetric matrix rank-2k update (SYR2K)
 
-  Blas level 2
+  Level 2
 
     MVMult(X, A, Y, alpha, beta, flags)         General matrix-vector multiplication (GEMV)
     MVUpdate(A, X, Y, alpha, flags)             General matrix rank update (GER)
@@ -28,7 +53,7 @@ Supported functionality is:
     MVSolveTrm(X, A, alpha, flags)              Triangular solve (TRSV)
     MVMultTrm(X, A, flags)                      Triangular matrix-vector multiplication (TRMV)
 
-  Blas level 1
+  Level 1
 
     ASum(X)                                     Sum of absolute values sum(|x|) (ASUM)
     Axpy(Y, X, alpha)                           Vector sum Y := alpha*X + Y (AXPY)
@@ -40,26 +65,37 @@ Supported functionality is:
 
   Additional
 
-    Copy(A, B)                                  Copy B to A.
+    Axpby(Y, X, alpha, beta)                    Vector sum Y := alpha*X + beta*Y 
+    Amax(X)                                     Absolute maximum of X
     InvScale(X, alpha)                          Inverse scaling of X 
-    ScalePlus(A, B, alpha, beta, flags)         Calculate A = alpha*op(A) + beta*op(B)
+    Copy(A, B)                                  Copy B to A.
+    Plus(A, B, alpha, beta, flags)              Calculate A = alpha*A + beta*op(B)
     NormP(X, norm)                              Matrix or vector norm, _1, _2, _Inf
     UpdateTrm(C, A, B, alpha, beta, flags)      Triangular/trapezoidal matrix update
     MVUpdateTrm(C, X, Y, alpha, flags)          Triangular/trapezoidal matrix update with vectors.
 
-  Lapack
+### Lapack
   
     DecomposeCHOL(A, conf)                      Cholesky factorization (DPOTRF)
     DecomposeLUnoPiv(A, conf)                   LU factorization without pivoting
     DecomposeLU(A, pivots, conf)                LU factorization with pivoting (DGETRF)
+    DecomposeQR(A, tau, W, conf)                QR factorization (DGEQRF)
+    DecomposeQRT(A, T, W, conf)                 QR factorixation with compact WY transformation (DGEQRT)
+    MultQ(C, A, tau, W, flags, conf)            Multiply with Q or Q.T  (DORMQR)
+    MultQT(C, A, T, W, flags, conf)             Multiply with Q or Q.T, compact WY transformation (DORGQR)
     SolveCHOL(B, A, flags, conf)                Solve Cholesky factorized linear system (DPOTRS)
     SolveLU(B, A, pivots, flags, conf)          Solve LU factorized linear system (DGETRS)
+    SolveQR(B, A, W, flags, conf)               Solve QR factorized linear system
+    SolveQRT(B, A, W, flags, conf)              Solve QRWY factorized linear system
+    WorksizeQR(A, conf)                         Compute worksize needed QR factorization
+    WorksizeQRT(A, conf)                        Compute worksize needed QRWY factorization
+    WorksizeMultQ(A, conf)                      Compute worksize for MultQ
+    WorksizeMultQT(A, conf)                     Compute worksize for MultQT
+    Workspace(size)                             Create workspace
 
-  Other
+###  Other
 
     DefaultConf()                               Get default blocking configuration 
     NewConf()                                   Create a new blocking configuration
     NewError(err, name)                         New error descriptor
-
-This is still WORK IN PROGRESS. Consider this as beta level code, at best. 
 

@@ -78,7 +78,7 @@ func Copy(A, B *cmat.FloatMatrix, confs ...*gomas.Config) *gomas.Error {
     avec := ar == 1 || ac == 1
     bvec := br == 1 || bc == 1
     if avec && bvec {
-        if A.Len() <= B.Len() {
+        if A.Len() < B.Len() {
             return gomas.NewError(gomas.ESIZE, "Copy")
         }
         vcopy(A, B, A.Len())

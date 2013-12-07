@@ -34,10 +34,10 @@ void __vec_copy(mvec_t *X,  const mvec_t *Y, int N)
   switch (N-i) {
   case 3:
     X->md[kx] = Y->md[ky];
-    kx++; ky++;
+    kx += X->inc; ky += Y->inc;
   case 2:
     X->md[kx] = Y->md[ky];
-    kx++; ky++;
+    kx += X->inc; ky += Y->inc;
   case 1:
     X->md[kx] = Y->md[ky];
   }

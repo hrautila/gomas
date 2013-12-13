@@ -663,9 +663,7 @@ func unblkSolveBKLower(B, A *cmat.FloatMatrix, p Pivots, phase int, conf *gomas.
                 nc -= 2
             }
         }
-
         // ------------------------------------------------------------
-
         util.Continue3x3to2x2(
             &ATL, &ATR,
             &ABL, &ABR,   &A00, &a11, &A22,   A, aDir)

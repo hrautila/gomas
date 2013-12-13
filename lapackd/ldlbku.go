@@ -545,7 +545,7 @@ func blkDecompBKUpper(A, W *cmat.FloatMatrix, p *Pivots, conf *gomas.Config) (er
 
 
 /*
- * Unblocked solve A*X = B for Bunch-Kauffman decomposed symmetric real matrix.
+ * Unblocked solve A*X = B for Bunch-Kauffman factorized symmetric real matrix.
  */
 func unblkSolveBKUpper(B, A *cmat.FloatMatrix, p Pivots, phase int, conf *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
@@ -584,6 +584,12 @@ func unblkSolveBKUpper(B, A *cmat.FloatMatrix, p Pivots, phase int, conf *gomas.
         &pT,
         &pB, p, 0, bStart)
 
+    // phase 1:
+    //   - solve U*D*X = B, overwriting B with X
+    //   - looping from BOTTOM to TOP
+    // phase 1:
+    //   - solve U*X = B, overwriting B with X
+    //   - looping from TOP to BOTTOM
     for n(Aref) > 0 {
         // see if next diagonal block is 1x1 or 2x2
         np = 1
@@ -608,20 +614,21 @@ func unblkSolveBKUpper(B, A *cmat.FloatMatrix, p Pivots, phase int, conf *gomas.
 
         switch phase {
         case 1:
-            // computes D.-1*(L.-1*B)
+            // computes D.-1*(U.-1*B);
+            // b1 is current row, last row of BT 
             if np == 1 {
                 if p1[0] != nc {
-                    // swap rows on bottom part of B
+                    // swap rows on top part of B
                     swapRows(&BT, m(&BT)-1, p1[0]-1)
                 }
-                // B2 = B2 - a01*b1
-                blasd.MVUpdate(&B2, &a01, &b1, -1.0)
+                // B0 = B0 - a01*b1
+                blasd.MVUpdate(&B0, &a01, &b1, -1.0)
                 // b1 = b1/d1 
                 blasd.InvScale(&b1, a11.Get(0, 0))
                 nc -= 1
             } else if np == 2 {
                 if p1[0] != -nc {
-                    // swap rows on bottom part of B
+                    // swap rows on top part of B
                     swapRows(&BT, m(&BT)-2, -p1[0]-1)
                 }
                 b := a11.Get(0, 1)
@@ -631,8 +638,8 @@ func unblkSolveBKUpper(B, A *cmat.FloatMatrix, p Pivots, phase int, conf *gomas.
                 scale := apb*dpb - 1.0
                 scale *= b
 
-                // B2 = B2 - a01*b1
-                blasd.Mult(&B2, &a01, &b1, -1.0, 1.0, gomas.NONE, conf)
+                // B0 = B0 - a01*b1
+                blasd.Mult(&B0, &a01, &b1, -1.0, 1.0, gomas.NONE, conf)
                 // b1 = a11.-1*b1.T
                 //(2x2 block, no subroutine for doing this in-place)
                 for k := 0; k < n(&b1); k++ {
@@ -644,8 +651,9 @@ func unblkSolveBKUpper(B, A *cmat.FloatMatrix, p Pivots, phase int, conf *gomas.
                 nc -= 2
             }
         case 2:
+            // compute X = U.-T*B
             if np == 1 {
-                blasd.MVMult(&b1, &B2, &a01, -1.0, 1.0, gomas.TRANS)
+                blasd.MVMult(&b1, &B0, &a01, -1.0, 1.0, gomas.TRANS)
                 if p1[0] != nc {
                     // swap rows on bottom part of B
                     util.Merge2x1(&Bx, &B0, &b1)
@@ -653,7 +661,7 @@ func unblkSolveBKUpper(B, A *cmat.FloatMatrix, p Pivots, phase int, conf *gomas.
                 }
                 nc += 1
             } else if np == 2 {
-                blasd.Mult(&b1, &a01, &B2, -1.0, 1.0, gomas.TRANSA, conf)
+                blasd.Mult(&b1, &a01, &B0, -1.0, 1.0, gomas.TRANSA, conf)
                 if p1[0] != -nc {
                     // swap rows on bottom part of B
                     util.Merge2x1(&Bx, &B0, &b1)

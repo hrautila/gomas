@@ -81,6 +81,7 @@ and 2.4 GHz clock rate we get 7.04 operations/cycle, ~ 88% of theoretical maximu
 
 ### Lapack
   
+    DecomposeBK(A, W, flags, conf)              LDL.T factorization (DSYTRF)
     DecomposeCHOL(A, conf)                      Cholesky factorization (DPOTRF)
     DecomposeLUnoPiv(A, conf)                   LU factorization without pivoting
     DecomposeLU(A, pivots, conf)                LU factorization with pivoting (DGETRF)
@@ -88,12 +89,15 @@ and 2.4 GHz clock rate we get 7.04 operations/cycle, ~ 88% of theoretical maximu
     DecomposeQRT(A, T, W, conf)                 QR factorixation with compact WY transformation (DGEQRT)
     MultQ(C, A, tau, W, flags, conf)            Multiply with Q or Q.T  (DORMQR)
     MultQT(C, A, T, W, flags, conf)             Multiply with Q or Q.T, compact WY transformation (DORGQR)
+    SolveBK(B, A, W, flags, conf)               Solve LDL.T factorized linear system (DSYTRS)
     SolveCHOL(B, A, flags, conf)                Solve Cholesky factorized linear system (DPOTRS)
     SolveLU(B, A, pivots, flags, conf)          Solve LU factorized linear system (DGETRS)
     SolveQR(B, A, W, flags, conf)               Solve QR factorized linear system
     SolveQRT(B, A, W, flags, conf)              Solve QRWY factorized linear system
-    WorksizeQR(A, conf)                         Compute worksize needed QR factorization
-    WorksizeQRT(A, conf)                        Compute worksize needed QRWY factorization
+
+    WorksizeBK(A, conf)                         Compute worksize needed for LDL.T  factorization
+    WorksizeQR(A, conf)                         Compute worksize needed for QR factorization
+    WorksizeQRT(A, conf)                        Compute worksize needed for QRWY factorization
     WorksizeMultQ(A, conf)                      Compute worksize for MultQ
     WorksizeMultQT(A, conf)                     Compute worksize for MultQT
     Workspace(size)                             Create workspace

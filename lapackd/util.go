@@ -33,6 +33,24 @@ func imax(a, b int) int {
     return b
 }
 
+/*
+ * Compute blocking factor that fits provided workspace.
+ */
+func estimateLB(A *cmat.FloatMatrix, wsz int, worksize func(*cmat.FloatMatrix, int)int) int {
+    lb := 4
+    wblk := worksize(A, 4)
+    if wsz < wblk {
+        // not enough for minimum blocking factor, fall to unblocked
+        return 0
+    }
+    for wsz > wblk {
+        lb += 2
+        wblk = worksize(A, lb)
+    }
+    if wblk > wsz { lb -= 2 }
+    return lb
+}
+
 // Local Variables:
 // tab-width: 4
 // indent-tabs-mode: nil

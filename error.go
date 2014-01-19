@@ -68,6 +68,12 @@ func (e *Error) Set(err int, op string, info int) *Error {
     return e
 }
 
+// Prepend Op field with string s to form s.Op.
+func (e *Error) Update(s string) *Error {
+    e.Op = s + "." + e.Op
+    return e
+}
+
 // Local Variables:
 // tab-width: 4
 // indent-tabs-mode: nil

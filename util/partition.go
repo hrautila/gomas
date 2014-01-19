@@ -256,65 +256,72 @@ func Repartition2x2to3x3(ATL,
     A00, A01, A02, A10, A11, A12, A20, A21, A22, A *cmat.FloatMatrix, nb int, pdir Direction) {
 
     ar, ac := A.Size()
-    k, _ := ATL.Size()
+    kr, kc := ATL.Size()
     switch (pdir) {
     case PBOTTOMRIGHT:
-        if k + nb > ac {
-            nb = ac - k
+        if kc + nb > ac {
+            nb = ac - kc
         }
-        A00.SubMatrix(A, 0, 0,    k, k)
+        if kr + nb > ar {
+            nb = ar - kr
+        }
+        A00.SubMatrix(A, 0, 0,    kr, kc)
         if A01 != nil {
-            A01.SubMatrix(A, 0, k,    k, nb)
+            A01.SubMatrix(A, 0, kc,    kr, nb)
         }
         if A02 != nil {
-            A02.SubMatrix(A, 0, k+nb, k, ac-k-nb)
+            A02.SubMatrix(A, 0, kc+nb, kr, ac-kc-nb)
         }
 
         if A10 != nil {
-            A10.SubMatrix(A, k, 0,    nb, k)
+            A10.SubMatrix(A, kr, 0,    nb, kc)
         }
-        A11.SubMatrix(A, k, k,    nb, nb)
+        A11.SubMatrix(A, kr, kc,    nb, nb)
         if A12 != nil {
-            A12.SubMatrix(A, k, k+nb, nb, ac-k-nb)
+            A12.SubMatrix(A, kr, kc+nb, nb, ac-kc-nb)
         }
 
         if A20 != nil {
-            A20.SubMatrix(A, k+nb, 0,    ar-k-nb, k)
+            A20.SubMatrix(A, kr+nb, 0,    ar-kr-nb, kc)
         }
         if A21 != nil {
-            A21.SubMatrix(A, k+nb, k,    ar-k-nb, nb)
+            A21.SubMatrix(A, kr+nb, kc,    ar-kr-nb, nb)
         }
-        A22.SubMatrix(A, k+nb, k+nb)
+        A22.SubMatrix(A, kr+nb, kc+nb)
     case PTOPLEFT:
-        if nb > k {
-            nb = k
+        if nb > kc {
+            nb = kc
+        }
+        if nb > kr {
+            nb = kr
         }
         // move towards top left corner
-        A00.SubMatrix(A, 0, 0,    k-nb, k-nb)
+        A00.SubMatrix(A, 0, 0,    kr-nb, kc-nb)
         if A01 != nil {
-            A01.SubMatrix(A, 0, k-nb, k-nb, nb)
+            A01.SubMatrix(A, 0, kc-nb, kr-nb, nb)
         }
         if A02 != nil {
-            A02.SubMatrix(A, 0, k, k-nb, ac-k)
+            A02.SubMatrix(A, 0, kc, kr-nb, ac-kc)
         }
 
         if A10 != nil {
-            A10.SubMatrix(A, k-nb, 0, nb, k-nb)
+            A10.SubMatrix(A, kr-nb, 0, nb, kc-nb)
         }
-        A11.SubMatrix(A, k-nb, k-nb,  nb, nb)
+        A11.SubMatrix(A, kr-nb, kc-nb,  nb, nb)
         if A12 != nil {
-            A12.SubMatrix(A, k-nb, k, nb, ac-k)
+            A12.SubMatrix(A, kr-nb, kc, nb, ac-kc)
         }
 
         if A20 != nil {
-            A20.SubMatrix(A, k, 0,    ar-k, k-nb)
+            A20.SubMatrix(A, kr, 0,    ar-kr, kc-nb)
         }
         if A21 != nil {
-            A21.SubMatrix(A, k, k-nb, ar-k, nb)
+            A21.SubMatrix(A, kr, kc-nb, ar-kr, nb)
         }
-        A22.SubMatrix(A, k, k)
+        A22.SubMatrix(A, kr, kc)
     }
 }
+
 
 /*
  * Redefine 2 by 2 blocks from 3 by 3 partition.
@@ -332,21 +339,21 @@ func Continue3x3to2x2(
     A00, A11, A22, A *cmat.FloatMatrix, pdir Direction) {
 
     ar, ac := A.Size()
-    k, _  := A00.Size()
+    kr, kc := A00.Size()
     _, mb := A11.Size()
     switch (pdir) {
     case PBOTTOMRIGHT:
-        ATL.SubMatrix(A, 0, 0,    k+mb, k+mb)
-        ATR.SubMatrix(A, 0, k+mb, k+mb, ac-k-mb)
+        ATL.SubMatrix(A, 0, 0,    kr+mb, kc+mb)
+        ATR.SubMatrix(A, 0, kc+mb, kr+mb, ac-kc-mb)
 
-        ABL.SubMatrix(A, k+mb, 0, ar-k-mb, k+mb)
-        ABR.SubMatrix(A, k+mb, k+mb)
+        ABL.SubMatrix(A, kr+mb, 0, ar-kr-mb, kc+mb)
+        ABR.SubMatrix(A, kr+mb, kc+mb)
     case PTOPLEFT:
-        ATL.SubMatrix(A, 0, 0,    k, k)
-        ATR.SubMatrix(A, 0, k, k, ac-k)
+        ATL.SubMatrix(A, 0, 0,  kr, kc)
+        ATR.SubMatrix(A, 0, kc, kr, ac-kc)
 
-        ABL.SubMatrix(A, k, 0, ar-k, ac-k)
-        ABR.SubMatrix(A, k, k)
+        ABL.SubMatrix(A, kr, 0, ar-kr, ac-kc)
+        ABR.SubMatrix(A, kr, kc)
     }
 }
 

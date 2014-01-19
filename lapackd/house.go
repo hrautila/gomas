@@ -39,7 +39,7 @@ func sqrtX2Y2(x, y float64) float64 {
 
 /* From LAPACK/dlarfg.f
  *
- * DLARFG generates a real elementary reflector H of order n, such
+ * Generates a real elementary reflector H of order n, such
  * that
  *
  *       H * ( alpha ) = ( beta ),   H**T * H = I.
@@ -59,7 +59,7 @@ func sqrtX2Y2(x, y float64) float64 {
  *
  * Otherwise  1 <= tau <= 2.
  */
-func computeHouseholder(a11, x, tau *cmat.FloatMatrix, flags int) {
+func computeHouseholder(a11, x, tau *cmat.FloatMatrix) {
     
     // norm_x2 = ||x||_2
     norm_x2 := blasd.Nrm2(x)
@@ -83,6 +83,21 @@ func computeHouseholder(a11, x, tau *cmat.FloatMatrix, flags int) {
     tau.Set(0, 0, (beta-alpha)/beta)
     a11.Set(0, 0, beta)
 }
+
+func computeHouseholderVec(x, tau *cmat.FloatMatrix) {
+    var alpha, x2 cmat.FloatMatrix
+    
+    r, _ := x.Size()
+    alpha.SubMatrix(x, 0, 0, 1, 1)
+    if r == 1 {
+        x2.SubMatrix(x, 0, 1, 1, x.Len()-1) // row vector
+    } else {
+        x2.SubMatrix(x, 1, 0, x.Len()-1, 1)
+    }
+    computeHouseholder(&alpha, &x2, tau)
+}
+
+
 
 /* From LAPACK/dlarf.f
  *
@@ -177,23 +192,38 @@ func applyHouseholder2x1(tau, v, a1, A2, w1 *cmat.FloatMatrix, flags int) *gomas
     return err
 }
 
-func applyHouseholder1x1(tau, v, A2, w1 *cmat.FloatMatrix, flags int) {
-
+/*
+ *  Apply elementary Householder reflector v to matrix A2.
+ *
+ *    H = I - tau*v*v.t;
+ *
+ *  RIGHT:  A = A*H = A - tau*A*v*v.T = A - tau*w1*v.T
+ *  LEFT:   A = H*A = A - tau*v*v.T*A = A - tau*v*A.T*v = A - tau*v*w1
+ */
+func applyHouseholder1x1(tau, v, A2, w1 *cmat.FloatMatrix, flags int) *gomas.Error {
+    var err *gomas.Error = nil
     tval := tau.Get(0, 0)
     if tval == 0.0 {
-        return
+        return nil
     }
     if flags & gomas.LEFT != 0 {
         // w1 = A2.T*v
-        blasd.MVMult(w1, A2, v, 1.0, 0.0, gomas.TRANSA)
+        err = blasd.MVMult(w1, A2, v, 1.0, 0.0, gomas.TRANSA)
+        if err == nil {
+            // A2 = A2 - tau*v*w1; m(A2) == len(v) && n(A2) == len(w1)
+            err = blasd.MVUpdate(A2, v, w1, -tval)
+        }
     } else {
         // w1 = A2*v
-        blasd.MVMult(w1, A2, v, 1.0, 0.0, gomas.NONE)
+        err = blasd.MVMult(w1, A2, v, 1.0, 0.0, gomas.NONE)
+        if err == nil {
+            // A2 = A2 - tau*w1*v; m(A2) == len(w1) && n(A2) == len(v)
+            err = blasd.MVUpdate(A2, w1, v, -tval)
+        }
     }
-
-    // A2 = A2 - tau*v*w1
-    blasd.MVUpdate(A2, v, w1, -tval)
+    return err
 }
+
 
 // Local Variables:
 // tab-width: 4

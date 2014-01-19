@@ -43,7 +43,7 @@ func unblockedQR(A, Tvec, W *cmat.FloatMatrix) {
             &tau1,
             &t2,     Tvec, 1, util.PBOTTOM)
         // ------------------------------------------------------
-        computeHouseholder(&a11, &a21, &tau1, gomas.LEFT)
+        computeHouseholder(&a11, &a21, &tau1)
 
         w12.SubMatrix(W, 0, 0, a12.Len(), 1)
         applyHouseholder2x1(&tau1, &a21, &a12, &A22, &w12, gomas.LEFT)
@@ -106,7 +106,7 @@ func blockedQR(A, Tvec, Twork, W *cmat.FloatMatrix, conf *gomas.Config) {
         // compute: C - Y*(C.T*Y*T).T
         ar, ac := A12.Size()
         Wrk.SubMatrix(W, 0, 0, ac, ar)
-        updateWithQTLeft(&A12, &A22, &A11, &A21, Twork, &Wrk, cb, true, conf)
+        updateWithQTLeft(&A12, &A22, &A11, &A21, Twork, &Wrk, true, conf)
         // --------------------------------------------------------
         util.Continue3x3to2x2(
             &ATL, &ATR,
@@ -134,9 +134,10 @@ func blockedQR(A, Tvec, Twork, W *cmat.FloatMatrix, conf *gomas.Config) {
 //
 // C1 is nb*K, C2 is P*K, Y1 is nb*nb trilu, Y2 is P*nb, T is nb*nb
 // W = K*nb
-func updateWithQTLeft(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, nb int, transpose bool, conf *gomas.Config) {
+func updateWithQTLeft(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf *gomas.Config) {
     // W = C1.T
     blasd.Plus(W, C1, 0.0, 1.0, gomas.TRANSB)
+
     // W = C1.T*Y1
     blasd.MultTrm(W, Y1, 1.0, gomas.LOWER|gomas.UNIT|gomas.RIGHT, conf)
     // W = W + C2.T*Y2
@@ -153,9 +154,9 @@ func updateWithQTLeft(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, nb int, transpose 
 
     // C2 = C2 - Y2*W.T
     blasd.Mult(C2, Y2, W, -1.0, 1.0, gomas.TRANSB, conf)
+
     //  W = Y1*W.T ==> W.T = W*Y1.T
     blasd.MultTrm(W, Y1, 1.0, gomas.LOWER|gomas.UNIT|gomas.TRANSA|gomas.RIGHT, conf)
-    
     // C1 = C1 - W.T
     blasd.Plus(C1, W, 1.0, -1.0, gomas.TRANSB)
     // --- here: C = (I - Y*T*Y.T).T * C ---
@@ -172,7 +173,7 @@ func updateWithQTLeft(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, nb int, transpose 
 //
 // C1 is K*nb, C2 is K*P, Y1 is nb*nb trilu, Y2 is P*nb, T is nb*nb
 // W = K*nb
-func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, nb int, transpose bool, conf *gomas.Config) {
+func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf *gomas.Config) {
     // -- compute: W = C*Y = C1*Y1 + C2*Y2
 
     // W = C1

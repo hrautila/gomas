@@ -45,7 +45,7 @@ func unblockedQRT(A, T, W *cmat.FloatMatrix) *gomas.Error {
 
         // ------------------------------------------------------
 
-        computeHouseholder(&a11, &a21, &t11, gomas.LEFT)
+        computeHouseholder(&a11, &a21, &t11)
 
         // H*[a12 A22].T
         w12.SubMatrix(W, 0, 0, a12.Len(), 1)
@@ -106,7 +106,7 @@ func blockedQRT(A, T, W *cmat.FloatMatrix, conf *gomas.Config) *gomas.Error {
         // compute: Q*T.C == C - Y*(C.T*Y*T).T
         ar, ac := A12.Size()
         W2.SubMatrix(W, 0, 0, ac, ar)
-        updateWithQTLeft(&A12, &A22, &A11, &A21, &T01, &W2, nb, true, conf)
+        updateWithQTLeft(&A12, &A22, &A11, &A21, &T01, &W2, true, conf)
         // --------------------------------------------------------
         util.Continue3x3to2x2(
             &ATL, &ATR,

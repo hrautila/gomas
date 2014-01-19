@@ -100,9 +100,9 @@ func blockedMultQTLeft(C, A, T, W *cmat.FloatMatrix, flags int, conf *gomas.Conf
             // this happens when n(A) not multiple of LB
             var Tmp cmat.FloatMatrix
             Tmp.SubMatrix(&T01, 0, 0, tc, tc)
-            updateWithQTLeft(&C1, &C2, &A11, &A21, &Tmp, &Wrk, nb, transpose, conf)
+            updateWithQTLeft(&C1, &C2, &A11, &A21, &Tmp, &Wrk, transpose, conf)
         } else {
-            updateWithQTLeft(&C1, &C2, &A11, &A21, &T01, &Wrk, nb, transpose, conf)
+            updateWithQTLeft(&C1, &C2, &A11, &A21, &T01, &Wrk, transpose, conf)
         }
 
         // --------------------------------------------------------
@@ -204,9 +204,9 @@ func blockedMultQTRight(C, A, T, W *cmat.FloatMatrix, flags int, conf *gomas.Con
             // this happens when n(A) not multiple of LB
             var Tmp cmat.FloatMatrix
             Tmp.SubMatrix(&T01, 0, 0, tc, tc)
-            updateWithQTRight(&C1, &C2, &A11, &A21, &Tmp, &Wrk, nb, transpose, conf)
+            updateWithQTRight(&C1, &C2, &A11, &A21, &Tmp, &Wrk, transpose, conf)
         } else {
-            updateWithQTRight(&C1, &C2, &A11, &A21, &T01, &Wrk, nb, transpose, conf)
+            updateWithQTRight(&C1, &C2, &A11, &A21, &T01, &Wrk, transpose, conf)
         }
         // --------------------------------------------------------
         util.Continue3x3to2x2(

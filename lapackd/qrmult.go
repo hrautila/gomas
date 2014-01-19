@@ -32,7 +32,7 @@ func unblockedMultQLeft(C, A, tau, w *cmat.FloatMatrix, flags int) {
     var A00, a10, a11, A20, a21, A22 cmat.FloatMatrix
     var CT, CB, C0, c1t, C2 cmat.FloatMatrix
     var tT, tB cmat.FloatMatrix
-    var t0, tau1, t2  cmat.FloatMatrix
+    var t0, tau1, t2, w1 cmat.FloatMatrix
 
     var Aref *cmat.FloatMatrix
     var pAdir, pAstart, pDir, pStart util.Direction
@@ -87,7 +87,8 @@ func unblockedMultQLeft(C, A, tau, w *cmat.FloatMatrix, flags int) {
 
         // --------------------------------------------------------
 
-        applyHouseholder2x1(&tau1, &a21, &c1t, &C2, w, gomas.LEFT)
+        w1.SubMatrix(w, 0, 0, c1t.Len(), 1)
+        applyHouseholder2x1(&tau1, &a21, &c1t, &C2, &w1, gomas.LEFT)
 
         // --------------------------------------------------------
         util.Continue3x3to2x2(
@@ -122,7 +123,7 @@ func unblockedMultQRight(C, A, tau, w *cmat.FloatMatrix, flags int) {
     var A00, a10, a11, A20, a21, A22 cmat.FloatMatrix
     var CL, CR, C0, c1, C2 cmat.FloatMatrix
     var tT, tB cmat.FloatMatrix
-    var t0, tau1, t2  cmat.FloatMatrix
+    var t0, tau1, t2, w1  cmat.FloatMatrix
 
     var Aref *cmat.FloatMatrix
     var pAdir, pAstart, pDir, pStart, pCstart, pCdir util.Direction
@@ -180,7 +181,8 @@ func unblockedMultQRight(C, A, tau, w *cmat.FloatMatrix, flags int) {
 
         // --------------------------------------------------------
 
-        applyHouseholder2x1(&tau1, &a21, &c1, &C2, w, gomas.RIGHT)
+        w1.SubMatrix(w, 0, 0, c1.Len(), 1)
+        applyHouseholder2x1(&tau1, &a21, &c1, &C2, &w1, gomas.RIGHT)
 
         // --------------------------------------------------------
         util.Continue3x3to2x2(
@@ -202,7 +204,7 @@ func unblockedMultQRight(C, A, tau, w *cmat.FloatMatrix, flags int) {
  * Elementary reflectors and scalar coefficients are used to build block reflector T.
  * Matrix C is updated by applying block reflector T using compact WY algorithm.
  */
-func blockedMultQLeft(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Config) {
+func blockedMultQLeft(C, A, tau, W *cmat.FloatMatrix, flags, nb int, conf *gomas.Config) {
     var ATL, ATR, ABL, ABR, AL cmat.FloatMatrix
     var A00, A10, A11, A20, A21, A22 cmat.FloatMatrix
     var CT, CB, C0, C1, C2 cmat.FloatMatrix
@@ -213,8 +215,6 @@ func blockedMultQLeft(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Con
     var Aref *cmat.FloatMatrix
     var pAdir, pAstart, pDir, pStart util.Direction
     var bsz, mb int
-
-    nb := conf.LB
 
     // partitioning start and direction
     if flags & gomas.TRANS != 0 || nb == n(A) {
@@ -266,15 +266,16 @@ func blockedMultQLeft(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Con
             &C1,
             &C2,     C, bsz, pDir)
         // --------------------------------------------------------
-        // build block reflector from current block
+        // clear & build block reflector from current block
         util.Merge2x1(&AL, &A11, &A21)
         Tw.SubMatrix(&Twork, 0, 0, bsz, bsz)
+        blasd.Scale(&Tw, 0.0)
         unblkQRBlockReflector(&Tw, &AL, &tau1)
-                                                         
+
         // compute: Q*T.C == C - Y*(C.T*Y*T).T  transpose == true
         //          Q*C   == C - C*Y*T*Y.T      transpose == false
         Wrk.SubMatrix(&W0, 0, 0, n(&C1), bsz)
-        updateWithQTLeft(&C1, &C2, &A11, &A21, &Tw, &Wrk, nb, transpose, conf)
+        updateWithQTLeft(&C1, &C2, &A11, &A21, &Tw, &Wrk, transpose, conf)
         // --------------------------------------------------------
         util.Continue3x3to2x2(
             &ATL, &ATR,
@@ -296,7 +297,7 @@ func blockedMultQLeft(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Con
  * Elementary reflectors and scalar coefficients are used to build block reflector T.
  * Matrix C is updated by applying block reflector T using compact WY algorithm.
  */
-func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Config) {
+func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags, nb int, conf *gomas.Config) {
     var ATL, ATR, ABL, ABR, AL cmat.FloatMatrix
     var A00, A10, A11, A20, A21, A22 cmat.FloatMatrix
     var CL, CR, C0, C1, C2 cmat.FloatMatrix
@@ -307,8 +308,6 @@ func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Co
     var Aref *cmat.FloatMatrix
     var pAdir, pAstart, pDir, pStart, pCstart, pCdir util.Direction
     var bsz, cb, mb int
-
-    nb := conf.LB
 
     // partitioning start and direction
     if flags & gomas.TRANS != 0 {
@@ -364,15 +363,16 @@ func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags int, conf *gomas.Co
         util.Repartition1x2to1x3(&CL,
             &C0, &C1, &C2 ,     C, bsz, pCdir)
         // --------------------------------------------------------
-        // build block reflector from current block
+        // clear & build block reflector from current block
         util.Merge2x1(&AL, &A11, &A21)
         Tw.SubMatrix(&Twork, 0, 0, bsz, bsz)
+        blasd.Scale(&Tw, 0.0)
         unblkQRBlockReflector(&Tw, &AL, &tau1)
 
         // compute: C*Q.T == C - C*(Y*T*Y.T).T = C - C*Y*T.T*Y.T
         //          C*Q   == C - C*Y*T*Y.T
         Wrk.SubMatrix(&W0, 0, 0, m(&C1), bsz)
-        updateWithQTRight(&C1, &C2, &A11, &A21, &Tw, &Wrk, nb, transpose, conf)
+        updateWithQTRight(&C1, &C2, &A11, &A21, &Tw, &Wrk, transpose, conf)
         // --------------------------------------------------------
         util.Continue3x3to2x2(
             &ATL, &ATR,
@@ -444,9 +444,9 @@ func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
         }
     } else {
         if flags & gomas.RIGHT != 0 {
-            blockedMultQRight(C, A, tau, W, flags, conf)
+            blockedMultQRight(C, A, tau, W, flags, conf.LB, conf)
         } else {
-            blockedMultQLeft(C, A, tau, W, flags, conf)
+            blockedMultQLeft(C, A, tau, W, flags, conf.LB, conf)
         }
     }
     return err
@@ -537,22 +537,30 @@ func SolveQR(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
  * computed with DecomposeQR().
  */
 func WorksizeMultQ(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz int) {
-    conf := gomas.DefaultConf()
-    if len(confs) > 0 {
-        conf = confs[0]
-    }
+    conf := gomas.CurrentConf(confs...)
     switch bits & gomas.RIGHT {
     case gomas.RIGHT:
-        sz = m(C)
+        sz = wsMultQRight(C, conf.LB)
     default:
-        sz = n(C)
+        sz = wsMultQLeft(C, conf.LB)
     }
-    if conf.LB > 0 {
-        // add space for intermediate reflector and account
-        // for blocking factor
-        sz = (sz + conf.LB)*conf.LB
+    return 
+}
+
+func wsMultQRight(A *cmat.FloatMatrix, lb int) int {
+    if lb == 0 || lb > n(A) {
+        return m(A)
     }
-    return
+    // need space for block reflector T and intermediate results
+    return lb*(m(A)+lb)
+}
+
+func wsMultQLeft(A *cmat.FloatMatrix, lb int) int {
+    if lb == 0 || lb > n(A) {
+        return n(A)
+    }
+    // need space for block reflector T and intermediate results
+    return lb*(n(A)+lb)
 }
 
 // Local Variables:

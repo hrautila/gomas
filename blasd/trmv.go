@@ -47,7 +47,11 @@ func MVMultTrm(X, A *cmat.FloatMatrix, alpha float64, bits int, confs... *gomas.
     if  ac != nx || ar != ac {
         return gomas.NewError(gomas.ESIZE, "MVMultTrm")
     }
-    trmv(X, A, alpha, bits, nx)
+    if ar == 1 {
+        vscal(X, alpha*A.Get(0, 0), nx)
+    } else {
+        trmv(X, A, alpha, bits, nx)
+    }
     return nil
 }
 

@@ -50,6 +50,10 @@ func MVMult(Y, A, X *cmat.FloatMatrix, alpha, beta float64, bits int, confs... *
     yr, yc := Y.Size()
     ar, ac := A.Size()
     xr, xc := X.Size()
+
+    if ar*ac == 0 {
+        return nil
+    }
     if yr != 1 && yc != 1 {
         return gomas.NewError(gomas.ENEED_VECTOR, "MVMult")
     }

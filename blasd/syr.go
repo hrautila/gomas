@@ -14,6 +14,10 @@ import "github.com/hrautila/gomas"
 func MVUpdateSym(A, X *cmat.FloatMatrix, alpha float64, bits int, confs... *gomas.Config) *gomas.Error {
     ar, ac := A.Size()
     xr, xc := X.Size()
+
+    if ar*ac == 0 {
+        return nil
+    }
     if xr != 1 && xc != 1 {
         return gomas.NewError(gomas.ENEED_VECTOR, "MVUpdateSym")
     }

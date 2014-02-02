@@ -46,6 +46,10 @@ func Update2Sym(Cc, A, B *cmat.FloatMatrix, alpha, beta float64, bits int, confs
     cr, cc := Cc.Size()
     ar, ac := A.Size()
     br, bc := B.Size()
+
+    if cr*cc == 0 {
+        return nil
+    }
     P := ac
     E := cr
     if bits & gomas.TRANS != 0 && bits & gomas.TRANSA == 0 {

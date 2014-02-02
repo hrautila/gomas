@@ -49,6 +49,10 @@ func MVUpdate2Sym(A, X, Y *cmat.FloatMatrix, alpha float64, bits int, confs... *
     ar, ac := A.Size()
     yr, yc := Y.Size()
     xr, xc := X.Size()
+
+    if ar*ac == 0 {
+        return nil
+    }
     if yr != 1 && yc != 1 {
         return gomas.NewError(gomas.ENEED_VECTOR, "MVUpdate2Sym")
     }

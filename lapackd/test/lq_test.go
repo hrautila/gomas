@@ -16,7 +16,6 @@ import (
 )
 
 func TestDecompLQ(t *testing.T) {
-    var t0 cmat.FloatMatrix
     M := 611
     N := 715
     nb := 32

@@ -530,18 +530,29 @@ func SolveLQ(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
     var err *gomas.Error = nil
     var L, BL cmat.FloatMatrix
 
-    conf := gomas.DefaultConf()
-    if len(confs) > 0 {
-        conf = confs[0]
+    conf := gomas.CurrentConf(confs...)
+
+    wsmin := wsMultLQLeft(B, 0)
+    if W.Len() < wsmin {
+        return gomas.NewError(gomas.EWORK, "SolveLQ", wsmin)
     }
 
-    msz := WorksizeMultLQ(B, gomas.LEFT, conf)
-    if W.Len() < msz {
-        return gomas.NewError(gomas.EWORK, "SolveLQ", msz)
-    }
+    if flags & gomas.TRANS != 0 {
+        // solve: MIN ||A.T*X - B||
 
-    if flags & gomas.TRANS == 0 {
-        // Solve underdetermined system A*X = B (L*Q*X = B == X = Q.T*L.-1*B)
+        // B' = Q.T*B
+        err = MultLQ(B, A, tau, W, gomas.LEFT, conf)
+        if err != nil {
+            return err
+        }
+
+        // X = L.-1*B'
+        L.SubMatrix(A, 0, 0, m(A), m(A))
+        BL.SubMatrix(B, 0, 0, m(A), n(B))
+        err = blasd.SolveTrm(&BL, &L, 1.0, gomas.LEFT|gomas.LOWER|gomas.TRANSA, conf)
+
+    } else {
+        // Solve underdetermined system A*X = B 
 
         // B' = L.-1*B
         L.SubMatrix(A, 0, 0, m(A), m(A))
@@ -549,24 +560,11 @@ func SolveLQ(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
         err = blasd.SolveTrm(&BL, &L, 1.0, gomas.LEFT|gomas.LOWER, conf)
         
         // Clear bottom part of B
-        BL.SubMatrix(B, 0, m(A))
+        BL.SubMatrix(B, m(A), 0)
         BL.SetFrom(cmat.NewFloatConstSource(0.0))
         
         // X = Q.T*B'
-        err = MultLQ(B, A, tau, W, gomas.LEFT|gomas.LEFT, conf)
-    } else {
-        // solve least square problem min ||A*X - B||
-
-        // B' = Q.T*B
         err = MultLQ(B, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
-        if err != nil {
-            return err
-        }
-
-        // X = L.-1*B'
-        L.SubMatrix(A, 0, 0, n(A), n(A))
-        BL.SubMatrix(B, 0, 0, n(A), n(B))
-        err = blasd.SolveTrm(&BL, &L, 1.0, gomas.LEFT|gomas.LOWER, conf)
 
     }
     return err
@@ -586,6 +584,11 @@ func WorksizeMultLQ(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz i
         sz = wsMultLQLeft(C, conf.LB)
     }
     return 
+}
+
+func WorksizeSolveLQ(C *cmat.FloatMatrix, confs... *gomas.Config) int {
+    conf := gomas.CurrentConf(confs...)
+    return wsMultLQLeft(C, conf.LB)
 }
 
 func wsMultLQRight(A *cmat.FloatMatrix, lb int) int {

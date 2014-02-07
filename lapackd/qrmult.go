@@ -425,6 +425,8 @@ func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
     if W == nil || W.Len() < wsz {
         return gomas.NewError(gomas.EWORK, "MultQ", wsz)
     }
+
+    // n(A) is number of elementary reflectors defining the Q matrix
     ok := false
     switch flags & gomas.RIGHT {
     case gomas.RIGHT:
@@ -545,6 +547,11 @@ func WorksizeMultQ(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz in
         sz = wsMultQLeft(C, conf.LB)
     }
     return 
+}
+
+func WorksizeSolveQR(C *cmat.FloatMatrix, confs... *gomas.Config) int {
+    conf := gomas.CurrentConf(confs...)
+    return wsMultQLeft(C, conf.LB)
 }
 
 func wsMultQRight(A *cmat.FloatMatrix, lb int) int {

@@ -9,18 +9,20 @@ package gomas
 
 // these bits must be in sync with bits in C-header interfaces.h
 const (
-    TRANSA = 1 << iota
-    TRANSB
-    TRANS
-    LOWER
-    UPPER
-    LEFT
-    RIGHT
-    UNIT
-    CONJA
-    CONJB
-    CONJ
-    SYMM
+    TRANSA = 1 << iota  // A transposed
+    TRANSB              // B transposed
+    TRANS               // transposed matrix
+    LOWER               // lower triangular matrix
+    UPPER               // upper triangular matrix
+    LEFT                // multiply from left
+    RIGHT               // multiply from right
+    UNIT                // unit diagonal matrix
+    CONJA               // A is conjugate
+    CONJB               // B is conjugate
+    CONJ                // conjugate matrix
+    SYMM                // symmetric matrix
+    MULTQ               // multiply with orthogonal Q
+    MULTP               // multiply with orthogonal P
     NULL = 0
     NONE = 0
 )

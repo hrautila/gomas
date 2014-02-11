@@ -222,6 +222,27 @@ func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, c
   * Returns:
   *      Error indicator.
   *
+  * Additional information
+  *
+  *  Ortogonal matrix Q is product of elementary reflectors H(k)
+  *
+  *    Q = H(1)H(2),...,H(K), where K = min(M,N)
+  *
+  *  Elementary reflector H(k) is stored on column k of A below the diagonal with
+  *  implicit unit value on diagonal entry. The vector TAU holds scalar factors
+  *  of the elementary reflectors.
+  *
+  *  Contents of matrix A after factorization is as follow:
+  *
+  *    ( r  r  r  r  )   for M=6, N=4
+  *    ( v1 r  r  r  )
+  *    ( v1 v2 r  r  )
+  *    ( v1 v2 v3 r  )
+  *    ( v1 v2 v3 v4 )
+  *    ( v1 v2 v3 v4 )
+  *
+  *  where r is element of R, vk is element of H(k).
+  *
   * DecomposeQR is compatible with lapack.DGEQRF
   */
 func DecomposeQR(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
@@ -255,22 +276,24 @@ func Workspace(sz int) *cmat.FloatMatrix {
     return cmat.NewMatrix(sz, 1)
 }
 
+func wsQR(A *cmat.FloatMatrix, lb int) int {
+    sz := n(A)
+    if lb > 0 && n(A) > lb {
+        sz *= lb
+    }
+    return sz
+}
+
 /*
- * Calculate required workspace to decompose matrix A with current blocking configuration.
- * If blocking configuration is not provided then default configuation will be used.
+ * Calculate required workspace to decompose matrix A with current blocking
+ * configuration. If blocking configuration is not provided then default
+ * configuation will be used.
  *
  * Returns size of workspace as number of elements.
  */
 func WorksizeQR(A *cmat.FloatMatrix, confs... *gomas.Config) int {
-    conf := gomas.DefaultConf()
-    if len(confs) > 0 {
-        conf = confs[0]
-    }
-    sz := n(A)
-    if conf.LB > 0 && n(A) > conf.LB {
-        sz *= conf.LB
-    }
-    return sz
+    conf := gomas.CurrentConf(confs...)
+    return wsQR(A, conf.LB)
 }
 
 /*

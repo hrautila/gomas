@@ -85,13 +85,20 @@ and 2.4 GHz clock rate we get 7.04 operations/cycle, ~ 88% of theoretical maximu
     DecomposeCHOL(A, conf)                      Cholesky factorization (DPOTRF)
     DecomposeLUnoPiv(A, conf)                   LU factorization without pivoting
     DecomposeLU(A, pivots, conf)                LU factorization with pivoting (DGETRF)
+    DecomposeLQ(A, tau, W, conf)                LQ factorization (DGELQF)
     DecomposeQR(A, tau, W, conf)                QR factorization (DGEQRF)
-    DecomposeQRT(A, T, W, conf)                 QR factorixation with compact WY transformation (DGEQRT)
+    DecomposeQRT(A, T, W, conf)                 QR factorization with compact WY transformation (DGEQRT)
+    MultLQ(C, A, tau, W, flags, conf)           Multiply with Q or Q.T  (DORMLQ)
     MultQ(C, A, tau, W, flags, conf)            Multiply with Q or Q.T  (DORMQR)
     MultQT(C, A, T, W, flags, conf)             Multiply with Q or Q.T, compact WY transformation (DORGQR)
+    MultQHess(C, A, tau, W, flags, conf)        Multiply with Hessengerg Q matrix (DORMHR)
+    MultQBD(C, A, tau, W, flags, conf)          Multiply with bidiagonal Q or P matrix (DORMBR)
+    ReduceBidiag(A, tauq, taup, W, conf)        Bidiagonal reduction (DGEBRD)
+    ReduceHess(A, tau, W, conf)                 Hessenberg reduction. (DGEHRD)
     SolveBK(B, A, W, flags, conf)               Solve LDL.T factorized linear system (DSYTRS)
     SolveCHOL(B, A, flags, conf)                Solve Cholesky factorized linear system (DPOTRS)
     SolveLU(B, A, pivots, flags, conf)          Solve LU factorized linear system (DGETRS)
+    SolveLQ(B, A, W, flags, conf)               Solve LQ factorized linear system
     SolveQR(B, A, W, flags, conf)               Solve QR factorized linear system
     SolveQRT(B, A, W, flags, conf)              Solve QRWY factorized linear system
 

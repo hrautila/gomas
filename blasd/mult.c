@@ -207,7 +207,7 @@ void __gemm_inner(mdata_t *C, const mdata_t *A, const mdata_t *B,
 
   if (alpha == 0.0) {
     __subblock(&Aa, C, R, S);
-    __blk_scale(&Aa, beta, E-R, L-R);
+    __blk_scale(&Aa, beta, E-R, L-S);
     return;
   }
 

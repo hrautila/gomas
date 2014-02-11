@@ -439,7 +439,7 @@ func MultLQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
     var err *gomas.Error = nil
     var wsmin int
     var tauval float64
-    var Qh cmat.FloatMatrix
+    var Qh, tauh cmat.FloatMatrix
     conf := gomas.CurrentConf(confs...)
 
     // m(A) is number of elementary reflectors, Q is n(A)-by-n(A) matrix
@@ -466,6 +466,7 @@ func MultLQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
     }
     lb = imin(lb, conf.LB)
     Qh.SubMatrix(A, 0, 0, hr, hc)
+    tauh.SubMatrix(tau, 0, 0, m(A), 1)
     if hc == hr {
         // m-by-m multiplication, H(K) is unit vector
         // set last tauval to zero, householder functions expect this
@@ -474,16 +475,16 @@ func MultLQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
     }
     if conf.LB == 0 {
         if flags & gomas.RIGHT != 0 {
-            unblockedMultLQRight(C, &Qh, tau, W, flags)
+            unblockedMultLQRight(C, &Qh, &tauh, W, flags)
         } else {
-            unblockedMultLQLeft(C, &Qh, tau, W, flags)
+            unblockedMultLQLeft(C, &Qh, &tauh, W, flags)
         }
     } else {
         //lb = conf.LB
         if flags & gomas.RIGHT != 0 {
-            blockedMultLQRight(C, &Qh, tau, W, flags, lb, conf)
+            blockedMultLQRight(C, &Qh, &tauh, W, flags, lb, conf)
         } else {
-            blockedMultLQLeft(C, &Qh, tau, W, flags, lb, conf)
+            blockedMultLQLeft(C, &Qh, &tauh, W, flags, lb, conf)
         }
     }
     if hc == hr {

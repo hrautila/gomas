@@ -344,15 +344,21 @@ func Continue3x3to2x2(
     switch (pdir) {
     case PBOTTOMRIGHT:
         ATL.SubMatrix(A, 0, 0,    kr+mb, kc+mb)
-        ATR.SubMatrix(A, 0, kc+mb, kr+mb, ac-kc-mb)
-
-        ABL.SubMatrix(A, kr+mb, 0, ar-kr-mb, kc+mb)
+        if ATR != nil {
+            ATR.SubMatrix(A, 0, kc+mb, kr+mb, ac-kc-mb)
+        }
+        if ABL != nil {
+            ABL.SubMatrix(A, kr+mb, 0, ar-kr-mb, kc+mb)
+        }
         ABR.SubMatrix(A, kr+mb, kc+mb)
     case PTOPLEFT:
         ATL.SubMatrix(A, 0, 0,  kr, kc)
-        ATR.SubMatrix(A, 0, kc, kr, ac-kc)
-
-        ABL.SubMatrix(A, kr, 0, ar-kr, ac-kc)
+        if ATR != nil {
+            ATR.SubMatrix(A, 0, kc, kr, ac-kc)
+        }
+        if ABL != nil {
+            ABL.SubMatrix(A, kr, 0, ar-kr, ac-kc)
+        }
         ABR.SubMatrix(A, kr, kc)
     }
 }

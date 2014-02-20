@@ -15,7 +15,7 @@ import (
     "testing"
 )
 
-func TestReduceBidiag(t *testing.T) {
+func TestBidiagReduceUnblocked(t *testing.T) {
 
     N := 217
     M := 269
@@ -49,6 +49,44 @@ func TestReduceBidiag(t *testing.T) {
     t.Logf("|| BiRed(A).tauq - BiRed(A.T).taup||_1 : %e\n", nrm)
     nrm = lapackd.NormP(tauqt, lapackd.NORM_ONE)
     t.Logf("|| BiRed(A).taup - BiRed(A.T).tauq||_1 : %e\n", nrm)
+}
+
+func TestBidiagReduceBlockedTall(t *testing.T) {
+
+    N := 711
+    M := 883
+    nb := 64
+    conf := gomas.NewConf()
+    conf.LB = 0
+
+    zeromean := cmat.NewFloatNormSource()
+    A := cmat.NewMatrix(M, N)
+    A.SetFrom(zeromean)
+    tauq := cmat.NewMatrix(N, 1)
+    taup := cmat.NewMatrix(N, 1)
+
+    A1 := cmat.NewCopy(A)
+    tauq1 := cmat.NewMatrix(N, 1)
+    taup1 := cmat.NewMatrix(N, 1)
+
+    W := lapackd.Workspace(M+N)
+    W1 := lapackd.Workspace(nb*(M+N+1))
+
+    lapackd.ReduceBidiag(A, tauq, taup, W, conf)
+    conf.LB = nb
+    lapackd.ReduceBidiag(A1, tauq1, taup1, W1, conf)
+
+    // unblk.BiRed(A) == blk.BiRed(A)
+    blasd.Plus(A1, A, 1.0, -1.0, gomas.NONE)
+    blasd.Axpy(tauq1, tauq, -1.0)
+    blasd.Axpy(taup1, taup, -1.0)
+
+    nrm := lapackd.NormP(A1, lapackd.NORM_ONE)
+    t.Logf("|| unblk.BiRed(A) - blk.BiRed(A)||_1 : %e\n", nrm)
+    nrm = lapackd.NormP(taup1, lapackd.NORM_ONE)
+    t.Logf("|| unblk.BiRed(A).tauq - blk.BiRed(A).taup||_1 : %e\n", nrm)
+    nrm = lapackd.NormP(tauq1, lapackd.NORM_ONE)
+    t.Logf("|| unblk.BiRed(A).taup - blk.BiRed(A).tauq||_1 : %e\n", nrm)
 }
 
 

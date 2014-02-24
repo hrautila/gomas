@@ -44,11 +44,11 @@ func TestBidiagReduceUnblocked(t *testing.T) {
     blasd.Axpy(taupt, tauq, -1.0)
 
     nrm := lapackd.NormP(At, lapackd.NORM_ONE)
-    t.Logf("|| BiRed(A) - BiRed(A.T).T||_1 : %e\n", nrm)
+    t.Logf("M=%d, N=%d || BiRed(A) - BiRed(A.T).T||_1 : %e\n", M, N, nrm)
     nrm = lapackd.NormP(taupt, lapackd.NORM_ONE)
-    t.Logf("|| BiRed(A).tauq - BiRed(A.T).taup||_1 : %e\n", nrm)
+    t.Logf("  || BiRed(A).tauq - BiRed(A.T).taup||_1 : %e\n", nrm)
     nrm = lapackd.NormP(tauqt, lapackd.NORM_ONE)
-    t.Logf("|| BiRed(A).taup - BiRed(A.T).tauq||_1 : %e\n", nrm)
+    t.Logf("  || BiRed(A).taup - BiRed(A.T).tauq||_1 : %e\n", nrm)
 }
 
 func TestBidiagReduceBlockedTall(t *testing.T) {
@@ -82,14 +82,51 @@ func TestBidiagReduceBlockedTall(t *testing.T) {
     blasd.Axpy(taup1, taup, -1.0)
 
     nrm := lapackd.NormP(A1, lapackd.NORM_ONE)
-    t.Logf("|| unblk.BiRed(A) - blk.BiRed(A)||_1 : %e\n", nrm)
+    t.Logf("M=%d, N=%d || unblk.BiRed(A) - blk.BiRed(A)||_1 : %e\n", M, N, nrm)
     nrm = lapackd.NormP(taup1, lapackd.NORM_ONE)
-    t.Logf("|| unblk.BiRed(A).tauq - blk.BiRed(A).taup||_1 : %e\n", nrm)
+    t.Logf("  || unblk.BiRed(A).tauq - blk.BiRed(A).taup||_1 : %e\n", nrm)
     nrm = lapackd.NormP(tauq1, lapackd.NORM_ONE)
-    t.Logf("|| unblk.BiRed(A).taup - blk.BiRed(A).tauq||_1 : %e\n", nrm)
+    t.Logf("  || unblk.BiRed(A).taup - blk.BiRed(A).tauq||_1 : %e\n", nrm)
 }
 
 
+func TestReduceBidiagBlkWide(t *testing.T) {
+
+    N := 911
+    M := 823
+    nb := 48
+    conf := gomas.NewConf()
+    conf.LB = 0
+
+    zeromean := cmat.NewFloatNormSource()
+    A := cmat.NewMatrix(M, N)
+    A.SetFrom(zeromean)
+    tauq := cmat.NewMatrix(N, 1)
+    taup := cmat.NewMatrix(N, 1)
+
+    A1 := cmat.NewCopy(A)
+    tauq1 := cmat.NewMatrix(N, 1)
+    taup1 := cmat.NewMatrix(N, 1)
+
+    W := lapackd.Workspace(M+N)
+
+    lapackd.ReduceBidiag(A, tauq, taup, W, conf)
+    conf.LB = nb
+    W1 := lapackd.Workspace(lapackd.WorksizeBidiag(A1, conf))
+    lapackd.ReduceBidiag(A1, tauq1, taup1, W1, conf)
+
+    // BiRed(A) == BiRed(A.T).T
+    blasd.Plus(A1, A, 1.0, -1.0, gomas.NONE)
+    blasd.Axpy(tauq1, tauq, -1.0)
+    blasd.Axpy(taup1, taup, -1.0)
+
+    nrm := lapackd.NormP(A1, lapackd.NORM_ONE)
+    t.Logf("M=%d, N=%d || BiRed(A) - blk.BiRed(A)||_1 : %e\n", M, N, nrm)
+    nrm = lapackd.NormP(taup1, lapackd.NORM_ONE)
+    t.Logf("  || BiRed(A).tauq - blk.BiRed(A).taup||_1 : %e\n", nrm)
+    nrm = lapackd.NormP(tauq1, lapackd.NORM_ONE)
+    t.Logf("  || BiRed(A).taup - blk.BiRed(A).tauq||_1 : %e\n", nrm)
+}
 
 func TestBiredTall(t *testing.T) {
     N := 643
@@ -124,17 +161,19 @@ func TestBiredTall(t *testing.T) {
     blasd.Transpose(Bt, B)
 
     conf.LB = nb
-    W0 := lapackd.Workspace(lapackd.WorksizeMultQBD(B, conf))
-    lapackd.MultQBD(B, A, tauq, W0, gomas.MULTQ|gomas.LEFT, conf)
-    lapackd.MultQBD(B, A, taup, W0, gomas.MULTP|gomas.RIGHT|gomas.TRANS, conf)
+    W0 := lapackd.Workspace(lapackd.WorksizeMultBidiag(B, conf))
+    lapackd.MultBidiag(B, A, tauq, W0, gomas.MULTQ|gomas.LEFT, conf)
+    lapackd.MultBidiag(B, A, taup, W0, gomas.MULTP|gomas.RIGHT|gomas.TRANS, conf)
 
-    lapackd.MultQBD(Bt, A, taup, W0, gomas.MULTP|gomas.LEFT, conf)
-    lapackd.MultQBD(Bt, A, tauq, W0, gomas.MULTQ|gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.MultBidiag(Bt, A, taup, W0, gomas.MULTP|gomas.LEFT, conf)
+    lapackd.MultBidiag(Bt, A, tauq, W0, gomas.MULTQ|gomas.RIGHT|gomas.TRANS, conf)
 
     blasd.Plus(B, A0, 1.0, -1.0, gomas.NONE)
-    t.Logf("||A - Q*B*P.T||_1   : %e\n", lapackd.NormP(B, lapackd.NORM_ONE))
+    nrm := lapackd.NormP(B, lapackd.NORM_ONE)
+    t.Logf("M=%d, N=%d ||A - Q*B*P.T||_1   : %e\n", M, N, nrm)
     blasd.Plus(Bt, A0, 1.0, -1.0, gomas.TRANSB)
-    t.Logf("||A.T - P*B.T*Q.T||_1 : %e\n", lapackd.NormP(Bt, lapackd.NORM_ONE))
+    nrm = lapackd.NormP(Bt, lapackd.NORM_ONE)
+    t.Logf("M=%d, N=%d ||A.T - P*B.T*Q.T||_1 : %e\n", M, N, nrm)
 }
 
 
@@ -171,17 +210,19 @@ func TestBiredWide(t *testing.T) {
     blasd.Transpose(Bt, B)
 
     conf.LB = nb
-    W0 := lapackd.Workspace(lapackd.WorksizeMultQBD(B, conf))
-    lapackd.MultQBD(B,  A, tauq, W0, gomas.MULTQ|gomas.LEFT, conf)
-    lapackd.MultQBD(Bt, A, tauq, W0, gomas.MULTQ|gomas.RIGHT|gomas.TRANS, conf)
+    W0 := lapackd.Workspace(lapackd.WorksizeMultBidiag(B, conf))
+    lapackd.MultBidiag(B,  A, tauq, W0, gomas.MULTQ|gomas.LEFT, conf)
+    lapackd.MultBidiag(Bt, A, tauq, W0, gomas.MULTQ|gomas.RIGHT|gomas.TRANS, conf)
 
-    lapackd.MultQBD(B,  A, taup, W0, gomas.MULTP|gomas.RIGHT|gomas.TRANS, conf)
-    lapackd.MultQBD(Bt, A, taup, W0, gomas.MULTP|gomas.LEFT, conf)
+    lapackd.MultBidiag(B,  A, taup, W0, gomas.MULTP|gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.MultBidiag(Bt, A, taup, W0, gomas.MULTP|gomas.LEFT, conf)
 
     blasd.Plus(B, A0, 1.0, -1.0, gomas.NONE)
-    t.Logf("||A - Q*B*P.T||_1   : %e\n", lapackd.NormP(B, lapackd.NORM_ONE))
+    nrm := lapackd.NormP(B, lapackd.NORM_ONE)
+    t.Logf("M=%d, N=%d ||A - Q*B*P.T||_1   : %e\n", M, N, nrm)
     blasd.Plus(Bt, A0, 1.0, -1.0, gomas.TRANSB)
-    t.Logf("||A.T - P*B.T*Q.T||_1 : %e\n", lapackd.NormP(Bt, lapackd.NORM_ONE))
+    nrm = lapackd.NormP(Bt, lapackd.NORM_ONE)
+    t.Logf("M=%d, N=%d ||A.T - P*B.T*Q.T||_1 : %e\n", M, N, nrm)
 }
 
 

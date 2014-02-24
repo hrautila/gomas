@@ -12,7 +12,7 @@ import (
     "github.com/hrautila/gomas"
     "github.com/hrautila/gomas/util"
     "github.com/hrautila/gomas/blasd"
-    "fmt"
+    //"fmt"
 )
 
 /*
@@ -66,16 +66,6 @@ import (
  *  7.  A22  := A22 - tauq*u*y21
  *  8.  A22  := A22 - taup*z21*v
  */
-
-func printVec(name string, vec *cmat.FloatMatrix) {
-    var t0 cmat.FloatMatrix
-    if n(vec) == 1 {
-        t0.SetBuf(1, vec.Len(), 1, vec.Data())
-        fmt.Printf("%s:\n%v\n", name, &t0)
-    } else {
-        fmt.Printf("%s:\n%v\n", name, vec)
-    }
-}
 
 /*
  * Compute unblocked bidiagonal reduction for A when M >= N
@@ -169,7 +159,7 @@ func unblkReduceBidiagLeft(A, tauq, taup, W *cmat.FloatMatrix) {
 /*
  * This is adaptation of BIRED_LAZY_UNB algorithm from (1).
  */
-func unblkBuildBidiagLeft(A, tauq, taup, Y, Z, W *cmat.FloatMatrix) {
+func unblkBuildBidiagLeft(A, tauq, taup, Y, Z *cmat.FloatMatrix) {
     var ATL, ATR, ABR cmat.FloatMatrix
     var A00, a01, A02, a10, a11, a12t, A20, a21, A22 cmat.FloatMatrix
     var YTL, YBR, ZTL, ZBR cmat.FloatMatrix
@@ -224,7 +214,7 @@ func unblkBuildBidiagLeft(A, tauq, taup, Y, Z, W *cmat.FloatMatrix) {
             &tp2,     taup, 1, util.PBOTTOM)
 		
         // set temp vectors for this round
-        w00.SubMatrix(W, 0, 0, n(&A20), 1)
+        w00.SubMatrix(Z, 0, n(Z)-1, n(&A20), 1)
         // ------------------------------------------------------
         // u10 == a10, U20 == A20, u21 == a21,
         // v10 == a01, V20 == A02, v21 == a12t
@@ -317,13 +307,11 @@ func blkBidiagLeft(A, tauq, taup, W *cmat.FloatMatrix, lb int, conf *gomas.Confi
     var tpT, tpB, tp0, taup1, tp2 cmat.FloatMatrix
     var ZT, ZB, YT, YB cmat.FloatMatrix
     var Z0, Z1, Z2, Y0, Y1, Y2 cmat.FloatMatrix
-    var Y, Z, w0 cmat.FloatMatrix
+    var Y, Z cmat.FloatMatrix
 	
     // setup work buffers
     Z.SetBuf(m(A), lb, m(A),   W.Data())
     Y.SetBuf(n(A), lb, n(A), W.Data()[Z.Len():])
-
-    w0.SetBuf(lb, 1, lb, W.Data()[Z.Len()+Y.Len():])
 
     util.Partition2x2(
         &ATL, nil,
@@ -366,7 +354,7 @@ func blkBidiagLeft(A, tauq, taup, W *cmat.FloatMatrix, lb int, conf *gomas.Confi
         // ------------------------------------------------------
 
         //util.Merge2x1(&AL, &A11, &A21)
-        unblkBuildBidiagLeft(&ABR, &tauq1, &taup1, &YB, &ZB, &w0)
+        unblkBuildBidiagLeft(&ABR, &tauq1, &taup1, &YB, &ZB)
 
         // set super-diagonal entry to one
         v0 := A12.Get(m(&A12)-1, 0)
@@ -403,6 +391,8 @@ func blkBidiagLeft(A, tauq, taup, W *cmat.FloatMatrix, lb int, conf *gomas.Confi
         unblkReduceBidiagLeft(&ABR, &tqB, &tpB, W)
     }
 }
+
+
 
 /*
  *  Computing transformation from right to left.
@@ -531,6 +521,247 @@ func unblkReduceBidiagRight(A, tauq, taup, W *cmat.FloatMatrix) {
     }
 }
 
+/*
+ * This is adaptation of BIRED_LAZY_UNB algorithm from (1).
+ *
+ * Z matrix accumulates updates of row transformations i.e. first
+ * Householder that zeros off diagonal entries on row. Vector z21
+ * is updates for current round, Z20 are already accumulated updates.
+ * Vector z21 updates a12 before next transformation.
+ *
+ * Y matrix accumulates updates on column tranformations ie Householder
+ * that zeros elements below sub-diagonal. Vector y21 is updates for current
+ * round, Y20 are already accumulated updates.  Vector y21 updates
+ * a21 befor next transformation.
+ *
+ * Z, Y matrices upper trigonal part is not needed, temporary vector
+ * w00 that has maximum length of n(Y) is placed on the last column of
+ * Z matrix on each iteration.
+ */
+func unblkBuildBidiagRight(A, tauq, taup, Y, Z *cmat.FloatMatrix) {
+    var ATL, ABL, ABR cmat.FloatMatrix
+    var A00, a01, A02, a10, a11, a12t, A20, a21, A22 cmat.FloatMatrix
+    var YTL, YBR, ZTL, ZBR cmat.FloatMatrix
+    var Y00, y10, Y20, y11, y21, Y22 cmat.FloatMatrix
+    var Z00, z10, Z20, z11, z21, Z22 cmat.FloatMatrix
+    var tqT, tqB, tq0, tauq1, tq2 cmat.FloatMatrix
+    var tpT, tpB, tp0, taup1, tp2 cmat.FloatMatrix
+    var w00 cmat.FloatMatrix
+    var v0 float64
+
+    // Y is workspace for building updates for first Householder.
+    // And Z is space for build updates for second Householder
+    // Y is n(A)-2,nb and Z is m(A)-1,nb  
+
+    util.Partition2x2(
+        &ATL, nil,
+        &ABL, &ABR, A, 0, 0, util.PTOPLEFT)
+    util.Partition2x2(
+        &YTL, nil,
+        nil,  &YBR, Y, 0, 0, util.PTOPLEFT)
+    util.Partition2x2(
+        &ZTL, nil,
+        nil,  &ZBR, Z, 0, 0, util.PTOPLEFT)
+    util.Partition2x1(
+        &tqT,
+        &tqB,  tauq, 0, util.PTOP)
+    util.Partition2x1(
+        &tpT,
+        &tpB,  taup, 0, util.PTOP)
+
+    k := 0
+    for k < n(Y) {
+        util.Repartition2x2to3x3(&ATL,
+            &A00, &a01, &A02,
+            &a10, &a11, &a12t,
+            &A20, &a21, &A22,   A, 1, util.PBOTTOMRIGHT)
+        util.Repartition2x2to3x3(&YTL,
+            &Y00, nil,  nil,
+            &y10, &y11, nil,
+            &Y20, &y21, &Y22,   Y, 1, util.PBOTTOMRIGHT)
+        util.Repartition2x2to3x3(&ZTL,
+            &Z00, nil,  nil,
+            &z10, &z11, nil,
+            &Z20, &z21, &Z22,   Z, 1, util.PBOTTOMRIGHT)
+        util.Repartition2x1to3x1(&tqT,
+            &tq0,
+            &tauq1,
+            &tq2,     tauq, 1, util.PBOTTOM)
+        util.Repartition2x1to3x1(&tpT,
+            &tp0,
+            &taup1,
+            &tp2,     taup, 1, util.PBOTTOM)
+		
+        // set temp vectors for this round,
+        w00.SubMatrix(Z, 0, n(Z)-1, m(&A02), 1)
+        // ------------------------------------------------------
+        // u10 == a10, U20 == A20, u21 == a21,
+        // v10 == a01, V20 == A02, v21 == a12t
+        if n(&Y20) > 0 {
+            // a11 := a11 - u10t*z10 - y10*v10
+            aa := blasd.Dot(&a10, &z10)
+            aa += blasd.Dot(&y10, &a01)
+            a11.Set(0, 0, a11.Get(0, 0) - aa)
+            // a12t := a12t - V20*z10 - Z20*u10
+            blasd.MVMult(&a12t, &A02, &y10, -1.0, 1.0, gomas.TRANS)
+            blasd.MVMult(&a12t, &Z20, &a10, -1.0, 1.0, gomas.NONE)
+            // a21 := a21 - Y20*v10 - U20*z10
+            blasd.MVMult(&a21, &Y20, &a01, -1.0, 1.0, gomas.NONE)
+            blasd.MVMult(&a21, &A20, &z10, -1.0, 1.0, gomas.NONE)
+            // here restore bidiagonal entry
+            a10.Set(0, -1, v0)
+        }
+        // Compute householder to zero superdiagonal entries
+        computeHouseholder(&a11, &a12t, &taup1)
+        taupv := taup1.Get(0, 0)
+		
+        // y21 := a21 + A22*v21 - Y20*U20.T*v21 - V20*Z20.T*v21
+        blasd.Axpby(&y21, &a21, 1.0, 0.0)
+        blasd.MVMult(&y21, &A22, &a12t, 1.0, 1.0, gomas.NONE)
+
+        // w00 := U20.T*v21 [= A02*a12t]
+        blasd.MVMult(&w00, &A02, &a12t, 1.0, 0.0, gomas.NONE)
+        // y21 := y21 - U20*w00 [U20 == A20]
+        blasd.MVMult(&y21, &Y20, &w00, -1.0, 1.0, gomas.NONE)
+        // w00 := Z20.T*v21
+        blasd.MVMult(&w00, &Z20, &a12t, 1.0, 0.0, gomas.TRANS)
+        // y21 := y21 - V20*w00  [V20 == A02.T]
+        blasd.MVMult(&y21, &A20, &w00, -1.0, 1.0, gomas.NONE)
+
+        // a21 := a21 - taup*y21
+        blasd.Scale(&y21, taupv)
+        blasd.Axpy(&a21, &y21, -1.0)
+
+        // Compute householder to zero elements below 1st subdiagonal
+        computeHouseholderVec(&a21, &tauq1)
+        v0 = a21.Get(0, 0)
+        a21.Set(0, 0, 1.0)
+        tauqv := tauq1.Get(0, 0)
+
+        // z21 := tauq*(A22*y - V20*Y20.T*u - Z20*U20.T*u - beta*v)
+        // [v == a12t, u == a21]
+        beta  := blasd.Dot(&y21, &a21)
+        // z21 := beta*v
+        blasd.Axpby(&z21, &a12t, beta, 0.0)
+        // w00 = Y20.T*u
+        blasd.MVMult(&w00, &Y20, &a21, 1.0, 0.0, gomas.TRANS)
+        // z21 = z21 + V20*w00 == A02.T*w00
+        blasd.MVMult(&z21, &A02, &w00, 1.0, 1.0, gomas.TRANS)
+        // w00 := U20.T*u  (U20.T == A20.T)
+        blasd.MVMult(&w00, &A20, &a21, 1.0, 0.0, gomas.TRANS)
+        // z21 := z21 + Z20*w00
+        blasd.MVMult(&z21, &Z20, &w00, 1.0, 1.0, gomas.NONE)
+        // z21 := -tauq*z21 + tauq*A22*v
+        blasd.MVMult(&z21, &A22, &a21, tauqv, -tauqv, gomas.TRANS)
+        // ------------------------------------------------------
+        k += 1
+        util.Continue3x3to2x2(
+            &ATL, nil, 
+            &ABL, &ABR,   &A00, &a11, &A22,   A, util.PBOTTOMRIGHT)
+        util.Continue3x3to2x2(
+            &YTL, nil,
+            nil,  &YBR,   &Y00, &y11, &Y22,   Y, util.PBOTTOMRIGHT)
+        util.Continue3x3to2x2(
+            &ZTL, nil,
+            nil,  &ZBR,   &Z00, &z11, &Z22,   Z, util.PBOTTOMRIGHT)
+        util.Continue3x1to2x1(
+            &tqT,
+            &tqB,   &tq0, &tauq1,   tauq, util.PBOTTOM)
+        util.Continue3x1to2x1(
+            &tpT,
+            &tpB,   &tp0, &taup1,   taup, util.PBOTTOM)
+    }
+    // restore 
+    ABL.Set(0, -1, v0)
+}
+
+func blkBidiagRight(A, tauq, taup, W *cmat.FloatMatrix, lb int, conf *gomas.Config) {
+    var ATL, ABR cmat.FloatMatrix
+    var A00, A11, A12, A21, A22 cmat.FloatMatrix
+    var tqT, tqB, tq0, tauq1, tq2 cmat.FloatMatrix
+    var tpT, tpB, tp0, taup1, tp2 cmat.FloatMatrix
+    var ZT, ZB, YT, YB cmat.FloatMatrix
+    var Z0, Z1, Z2, Y0, Y1, Y2 cmat.FloatMatrix
+    var Y, Z cmat.FloatMatrix
+	
+    // setup work buffers
+    Z.SetBuf(n(A), lb, n(A), W.Data())
+    Y.SetBuf(m(A), lb, m(A), W.Data()[Z.Len():])
+
+    util.Partition2x2(
+        &ATL, nil,
+        nil,  &ABR, A, 0, 0, util.PTOPLEFT)
+    util.Partition2x1(
+        &tqT,
+        &tqB,  tauq, 0, util.PTOP)
+    util.Partition2x1(
+        &tpT,
+        &tpB,  taup, 0, util.PTOP)
+    util.Partition2x1(
+        &YT,
+        &YB,  &Y, 0, util.PTOP)
+    util.Partition2x1(
+        &ZT,
+        &ZB,  &Z, 0, util.PTOP)
+
+    for m(&ABR) > lb && n(&ABR) > lb {
+        util.Repartition2x2to3x3(&ATL,
+            &A00, nil,  nil,
+            nil,  &A11, &A12,
+            nil,  &A21, &A22,   A, lb, util.PBOTTOMRIGHT)
+        util.Repartition2x1to3x1(&tqT,
+            &tq0,
+            &tauq1,
+            &tq2,     tauq, lb, util.PBOTTOM)
+        util.Repartition2x1to3x1(&tpT,
+            &tp0,
+            &taup1,
+            &tp2,     taup, lb, util.PBOTTOM)
+        util.Repartition2x1to3x1(&ZT,
+            &Z0,
+            &Z1,
+            &Z2,     &Z, lb, util.PBOTTOM)
+        util.Repartition2x1to3x1(&YT,
+            &Y0,
+            &Y1,
+            &Y2,     &Y, lb, util.PBOTTOM)
+        // ------------------------------------------------------
+        unblkBuildBidiagRight(&ABR, &tauq1, &taup1, &YB, &ZB)
+
+        // set sub-diagonal entry to one
+        v0 := A21.Get(0, n(&A21)-1)
+        A21.Set(0, n(&A21)-1, 1.0)
+
+        // A22 := A22 - U2*Z2.T
+        blasd.Mult(&A22, &A21, &Z2, -1.0, 1.0, gomas.TRANSB, conf)
+        // A22 := A22 - Y2*V2.T
+        blasd.Mult(&A22, &Y2, &A12, -1.0, 1.0, gomas.NONE, conf)
+
+        // restore sub-diagonal entry
+        A21.Set(0, n(&A21)-1, v0)
+        // ------------------------------------------------------
+        util.Continue3x3to2x2(
+            &ATL, nil,
+            nil,  &ABR,   &A00, &A11, &A22,   A, util.PBOTTOMRIGHT)
+        util.Continue3x1to2x1(
+            &tqT,
+            &tqB,   &tq0, &tauq1,   tauq, util.PBOTTOM)
+        util.Continue3x1to2x1(
+            &tpT,
+            &tpB,   &tp0, &taup1,   taup, util.PBOTTOM)
+        util.Continue3x1to2x1(
+            &ZT,
+            &ZB,   &Z0, &Z1,   &Z, util.PBOTTOM)
+        util.Continue3x1to2x1(
+            &YT,
+            &YB,   &Y0, &Y1,   &Y, util.PBOTTOM)
+    }
+    
+    if n(&ABR) > 0 {
+        // do rest with unblocked 
+        unblkReduceBidiagRight(&ABR, &tqB, &tpB, W)
+    }
+}
 
 /*
  * Reduce a general M-by-N matrix A to upper or lower bidiagonal form B
@@ -599,14 +830,23 @@ func ReduceBidiag(A, tauq, taup, W *cmat.FloatMatrix, confs... *gomas.Config) *g
     if wsz < wmin {
         return gomas.NewError(gomas.EWORK, "ReduceBidiag", wmin)
     }
+    lb := conf.LB
+    wneed := wsBired(A, lb)
+    if wneed > wsz {
+        lb = estimateLB(A, wsz, wsBired)
+    }
     if m(A) >= n(A) {
-        if conf.LB > 0 {
-            blkBidiagLeft(A, tauq, taup, W, conf.LB, conf)
+        if lb > 0 && n(A) > lb {
+            blkBidiagLeft(A, tauq, taup, W, lb, conf)
         } else {
             unblkReduceBidiagLeft(A, tauq, taup, W)
         }
     } else {
-        unblkReduceBidiagRight(A, tauq, taup, W)
+        if lb > 0 && m(A) > lb {
+            blkBidiagRight(A, tauq, taup, W, lb, conf)
+        } else {
+            unblkReduceBidiagRight(A, tauq, taup, W)
+        }
     }
     return err
 }
@@ -647,7 +887,7 @@ func ReduceBidiag(A, tauq, taup, W *cmat.FloatMatrix, confs... *gomas.Config) *g
  *        MULTP,TRANS,RIGHT  C = C*P.T   n(C) == m(A)
  *
  */
-func MultQBD(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func MultBidiag(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var Qh, Ch, Ph, tauh cmat.FloatMatrix
     var err *gomas.Error = nil
 
@@ -707,10 +947,10 @@ func wsBired(A *cmat.FloatMatrix, lb int) int  {
     if lb == 0 {
         return m(A)+n(A)
     }
-    return (lb + m(A) + n(A))*lb
+    return (m(A) + n(A))*lb
 }
 
-func wsMultQbdLeft(A *cmat.FloatMatrix, lb int) int  {
+func wsMultBidiagLeft(A *cmat.FloatMatrix, lb int) int  {
     nq := wsMultQLeft(A, lb)
     np := wsMultLQLeft(A, lb)
     if np > nq {
@@ -719,7 +959,7 @@ func wsMultQbdLeft(A *cmat.FloatMatrix, lb int) int  {
     return nq
 }
 
-func wsMultQbdRight(A *cmat.FloatMatrix, lb int) int  {
+func wsMultBidiagRight(A *cmat.FloatMatrix, lb int) int  {
     nq := wsMultQRight(A, lb)
     np := wsMultLQRight(A, lb)
     if np > nq {
@@ -738,10 +978,10 @@ func WorksizeBidiag(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     return wsBired(A, conf.LB)
 }
 
-func WorksizeMultQBD(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func WorksizeMultBidiag(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
-    nl := wsMultQbdLeft(A, conf.LB)
-    nr := wsMultQbdRight(A, conf.LB)
+    nl := wsMultBidiagLeft(A, conf.LB)
+    nr := wsMultBidiagRight(A, conf.LB)
     if nl > nr {
         return nl
     }

@@ -92,7 +92,7 @@ and 2.4 GHz clock rate we get 7.04 operations/cycle, ~ 88% of theoretical maximu
     MultQ(C, A, tau, W, flags, conf)            Multiply with Q or Q.T  (DORMQR)
     MultQT(C, A, T, W, flags, conf)             Multiply with Q or Q.T, compact WY transformation (DORGQR)
     MultQHess(C, A, tau, W, flags, conf)        Multiply with Hessengerg Q matrix (DORMHR)
-    MultQBD(C, A, tau, W, flags, conf)          Multiply with bidiagonal Q or P matrix (DORMBR)
+    MultBidiag(C, A, tau, W, flags, conf)       Multiply with bidiagonal Q or P matrix (DORMBR)
     ReduceBidiag(A, tauq, taup, W, conf)        Bidiagonal reduction (DGEBRD)
     ReduceHess(A, tau, W, conf)                 Hessenberg reduction. (DGEHRD)
     SolveBK(B, A, W, flags, conf)               Solve LDL.T factorized linear system (DSYTRS)

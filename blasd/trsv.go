@@ -28,10 +28,14 @@ func trsv(X, A *cmat.FloatMatrix, alpha float64, bits, N int) error {
     if xr == 1 {
         Xm.inc = C.int(X.Stride())
     }
-    C.__d_trsv_recursive(
+    C.__d_trsv_unb(
         (*C.mvec_t)(unsafe.Pointer(&Xm)),
         (*C.mdata_t)(unsafe.Pointer(&Am)), 
-        C.double(alpha), C.int(bits), C.int(N))
+        /*C.double(alpha),*/
+        C.int(bits), C.int(N))
+    if alpha != 1.0 {
+        vscal(X, alpha, N)
+    }
     return nil
 }
 

@@ -109,7 +109,6 @@ void __trsv_unb_llt(DTYPE *X, const DTYPE *Ac, int unit, int incX, int ldA, int 
 
 
 
-static
 void __trsv_unb(mvec_t *X, const mdata_t *A, int flags, int N)
 {
   int unit = flags & GOMAS_UNIT ? 1 : 0;

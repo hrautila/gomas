@@ -28,7 +28,7 @@ func trmv(X, A *cmat.FloatMatrix, alpha float64, bits, N int) error {
     if xr == 1 {
         Xm.inc = C.int(X.Stride())
     }
-    C.__d_trmv_recursive(
+    C.__d_trmv_unb(
         (*C.mvec_t)(unsafe.Pointer(&Xm)),
         (*C.mdata_t)(unsafe.Pointer(&Am)), 
         C.double(alpha), C.int(bits), C.int(N))

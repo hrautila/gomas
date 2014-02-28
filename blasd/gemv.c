@@ -15,7 +15,6 @@
 // Y = alpha*A*X + beta*Y for rows R:E, A is M*N and 0 < R < E <= M, Update
 // with S:L columns from A and correspoding elements from X.
 // length of X. With matrix-vector operation will avoid copying data.
-static
 void __gemv_unb(mvec_t *Y, const mdata_t *A, const mvec_t *X,
                 DTYPE alpha, /*DTYPE beta,*/ int flags,
                  int S, int L, int R, int E)

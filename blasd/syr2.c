@@ -12,6 +12,12 @@
 #include "interfaces.h"
 #include "mvec_nosimd.h"
 
+void __update_syr2_unb(mdata_t *A, const mvec_t *X, const mvec_t *Y,
+                       DTYPE alpha, int flags, int N)
+{
+  __update_trmv_unb(A, X, Y, alpha, flags, N, N);
+  __update_trmv_unb(A, Y, X, alpha, flags, N, N);
+}
 
 void __update_syr2_recursive(mdata_t *A, const mvec_t *X, const mvec_t *Y,
                              DTYPE alpha, int flags, int N)

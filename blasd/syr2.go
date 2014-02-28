@@ -36,7 +36,7 @@ func syr2(A, X, Y *cmat.FloatMatrix, alpha float64, bits, N int) error {
         Ym.inc = C.int(Y.Stride())
     }
 
-    C.__d_update_syr2_recursive(
+    C.__d_update_syr2_unb(
         (*C.mdata_t)(unsafe.Pointer(&Am)), 
         (*C.mvec_t)(unsafe.Pointer(&Xm)),
         (*C.mvec_t)(unsafe.Pointer(&Ym)), 

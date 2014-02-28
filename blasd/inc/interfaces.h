@@ -191,9 +191,35 @@ void __d_update_trm_blk(mdata_t *C, const mdata_t *A, const mdata_t *B,
                         int P, int S, int L, int R, int E, int KB, int NB, int MB);
 
 extern
+void __d_gemv_unb(mvec_t *Y, const mdata_t *A, const mvec_t *X,
+                  double alpha, int flags, int S, int L, int R, int E);
+
+extern
+void __d_symv_unb(mvec_t *Y, const mdata_t *A, const mvec_t *X,
+                  double alpha, int flags, int N);
+
+extern
+void __d_trmv_unb(mvec_t *X, const mdata_t *A, double alpha, int flags, int N);
+
+extern
+void __d_trsv_unb(mvec_t *X, const mdata_t *A,  int flags, int N);
+
+extern
 void __d_gemv_recursive(mvec_t *Y, const mdata_t *A, const mvec_t *X,
                         double alpha, double beta, int flags,
                         int S, int L, int R, int E);
+
+extern
+void __d_update_ger_unb(mdata_t *A, const mvec_t *Y, const mvec_t *X,
+                        double alpha, int N, int M);
+
+extern
+void __d_update_trmv_unb(mdata_t *A, const mvec_t *Y, const mvec_t *X,
+                         double alpha, int flags, int N, int M);
+
+extern
+void __d_update_syr2_unb(mdata_t *A, const mvec_t *Y, const mvec_t *X,
+                         double alpha, int flags, int N);
 
 extern
 void __d_trmv_recursive(mvec_t *X, const mdata_t *A, 

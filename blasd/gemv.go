@@ -36,11 +36,13 @@ func gemv(Y, A, X *cmat.FloatMatrix, alpha, beta float64, bits, S, L, R, E int) 
         Ym.inc = C.int(Y.Stride())
     }
 
-    C.__d_gemv_recursive(
+    C.__d_gemv_unb(
         (*C.mvec_t)(unsafe.Pointer(&Ym)), 
         (*C.mdata_t)(unsafe.Pointer(&Am)), 
         (*C.mvec_t)(unsafe.Pointer(&Xm)),
-        C.double(alpha), C.double(beta), C.int(bits),
+        C.double(alpha),
+        /*C.double(beta),*/
+        C.int(bits),
         C.int(S), C.int(L), C.int(R), C.int(E))
 }
 

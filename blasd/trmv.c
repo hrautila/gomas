@@ -111,7 +111,6 @@ void __trmv_unb_llt(DTYPE *X, const DTYPE *Ac, const DTYPE alpha, int unit,
 
 
 
-static
 void __trmv_unb(mvec_t *X, const mdata_t *A, DTYPE alpha, int flags, int N)
 {
   int unit = flags & GOMAS_UNIT ? 1 : 0;

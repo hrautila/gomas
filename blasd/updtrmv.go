@@ -36,7 +36,7 @@ func updtrmv(A, X, Y *cmat.FloatMatrix, alpha float64, bits, N, M int) error {
         Ym.inc = C.int(Y.Stride())
     }
 
-    C.__d_update_trmv_recursive(
+    C.__d_update_trmv_unb(
         (*C.mdata_t)(unsafe.Pointer(&Am)), 
         (*C.mvec_t)(unsafe.Pointer(&Xm)),
         (*C.mvec_t)(unsafe.Pointer(&Ym)), 

@@ -42,6 +42,7 @@ typedef double ABSTYPE;
 #define __gemm_colwise_inner_scale_c   __d_gemm_colwise_inner_scale_c
 #define __gemm_colblk_inner      __d_gemm_colblk_inner
 #define __gemm_inner             __d_gemm_inner
+#define __gemv_unb               __d_gemv_unb
 #define __gemv_recursive         __d_gemv_recursive
 #define __symm_inner             __d_symm_inner
 #define __rank_diag              __d_rank_diag
@@ -52,17 +53,21 @@ typedef double ABSTYPE;
 #define __trmm_recursive         __d_trmm_recursive
 #define __trmm_blk_recursive     __d_trmm_blk_recursive
 #define __trmv_recursive         __d_trmv_recursive
+#define __trmv_unb               __d_trmv_unb
 #define __trsv_recursive         __d_trsv_recursive
+#define __trsv_unb               __d_trsv_unb
 #define __solve_left_unb         __d_solve_left_unb
 #define __solve_right_unb        __d_solve_right_unb
 #define __solve_blocked          __d_solve_blocked
 #define __solve_recursive        __d_solve_recursive
 #define __solve_blk_recursive    __d_solve_blk_recursive
+#define __symv_unb               __d_symv_unb
 #define __update_trmv_unb        __d_update_trmv_unb
 #define __update_trmv_recursive  __d_update_trmv_recursive
 #define __update_trm_blk         __d_update_trm_blk
 #define __update_ger_unb         __d_update_ger_unb
 #define __update_ger_recursive   __d_update_ger_recursive
+#define __update_syr2_unb        __d_update_syr2_unb
 #define __update_syr2_recursive  __d_update_syr2_recursive
 
 #define __vec_add            __d_vec_add

@@ -98,6 +98,21 @@ func computeHouseholderVec(x, tau *cmat.FloatMatrix) {
 }
 
 
+func computeHouseholderRev(x, tau *cmat.FloatMatrix) {
+    var alpha, x2 cmat.FloatMatrix
+    
+    r, _ := x.Size()
+    if r == 1 {
+        alpha.SubMatrix(x, 0, -1, 1, 1)
+        x2.SubMatrix(x, 0, 0, 1, x.Len()-1) // row vector
+    } else {
+        alpha.SubMatrix(x, -1, 0, 1, 1)
+        x2.SubMatrix(x, 0, 0, x.Len()-1, 1)
+    }
+    computeHouseholder(&alpha, &x2, tau)
+}
+
+
 
 /* From LAPACK/dlarf.f
  *

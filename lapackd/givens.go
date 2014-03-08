@@ -13,6 +13,35 @@ import (
     "math"
 )
 
+/*
+ * Givens rotation preserves vector length ie. || (a, b) ||_2 == || (r 0) ||_2 and therefore
+ * r = sqrt(a*a + b*b).
+ *
+ * LEFT:  
+ *  (c -s )( a ) = ( r )  == ( c*a - s*b ) = ( r )
+ *  (s  c )( b )   ( 0 )     ( s*a + c*b )   ( 0 ) --> s = -(b/a)*c
+ *
+ *     c*a + (b/a)*b*c = r 
+ *     c*(a^2 + b^2)/a = sqrt(a^2 + b^2)
+ *     c = a/sqrt(a^2+b^2)
+ *     c = a/r
+ *     --> s = -b/r
+ *
+ * RIGHT:
+ *  ( a  b )( c -s ) = (r  0) == (a*c+b*s  b*c-a*s) = ( r 0 ) --> s = (b/a)*c
+ *         ( s  c )            
+ *
+ *      a*c + b*(b/a)*c = r
+ *      c*(a^2 + b^2)/a = sqrt(a^2 + b^2)
+ *      c = a/sqrt(a^2 + b^2)
+ *      c = a/r
+ *      --> s = b/r
+ *
+ * 
+ *  r(R) ==  r(L) = sqrt(a^2 + b^2)
+ *  c(R) ==  c(L) = a/r
+ *  s(R) == -s(L) = -b/r, S(R) = b/r
+ */
 
 /*
  * Compute Givens rotation such that
@@ -20,9 +49,13 @@ import (
  *   G(s,c)*v = (r)   ==  ( c  -s ) ( a ) = ( r )
  *              (0)       ( s   c ) ( b )   ( 0 )
  *
- * (from Wikipedia)
+ * or if bits RIGHT is set
+ *
+ *   v*G(s,c) = (r 0 ) == (a b ) ( c -s ) = ( r 0 )
+ *                               ( s  c )
+ *
  */
-func ComputeGivens(a, b float64)  (c float64, s float64, r float64) {
+func ComputeGivens(a, b float64, bits int)  (c float64, s float64, r float64) {
 
     if b == 0.0 {
         if math.Signbit(a) {
@@ -42,7 +75,7 @@ func ComputeGivens(a, b float64)  (c float64, s float64, r float64) {
         r = math.Abs(b)
     } else if math.Abs(b) > math.Abs(a) {
         t := a/b
-        u := math.Sqrt(1 + t*t)
+        u := math.Sqrt(1.0 + t*t)
         if math.Signbit(b) {
             u = -u
         }
@@ -51,13 +84,16 @@ func ComputeGivens(a, b float64)  (c float64, s float64, r float64) {
         r = b*u
     } else {
         t := b/a
-        u := math.Sqrt(1 + t*t)
+        u := math.Sqrt(1.0 + t*t)
         if math.Signbit(a) {
             u = -u
         }
-        c = 1 / u
+        c = 1.0 / u
         s = -c*t
         r = a*u
+    }
+    if bits & gomas.RIGHT != 0 {
+        s = -s
     }
     return 
 }
@@ -70,7 +106,7 @@ func ComputeGivens(a, b float64)  (c float64, s float64, r float64) {
 func ApplyGivensLeft(A *cmat.FloatMatrix, i, j, nc int, c, s float64) {
     if m(A)-i < 2 {
         // one row
-        for k := j; k < n(A); k++ {
+        for k := j; k < j+nc; k++ {
             v0 := A.Get(i, k)
             A.Set(i, k, c*v0)
         }
@@ -94,7 +130,7 @@ func ApplyGivensLeft(A *cmat.FloatMatrix, i, j, nc int, c, s float64) {
 func ApplyGivensRight(A *cmat.FloatMatrix, i, j, nr int, c, s float64) {
     if n(A)-j < 2 {
         // one column
-        for k := i; k < m(A); k++ {
+        for k := i; k < i+nr; k++ {
             v0 := A.Get(k, j)
             A.Set(k, j, c*v0)
         }
@@ -103,8 +139,8 @@ func ApplyGivensRight(A *cmat.FloatMatrix, i, j, nr int, c, s float64) {
     for k := i; k < i+nr; k++ {
         v0 := A.Get(k, j)
         v1 := A.Get(k, j+1)
-        y0 :=  v0*c + v1*s
-        y1 := -v0*s + v1*c
+        y0 := v0*c + v1*s
+        y1 := v1*c - v0*s
         A.Set(k, j+0, y0)
         A.Set(k, j+1, y1)
     }

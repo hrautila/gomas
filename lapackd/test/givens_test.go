@@ -48,7 +48,7 @@ func TestGivensQR(t *testing.T) {
     for j := 0; j < N; j++ {
         // ... zero elements below diagonal, starting from bottom
         for i := M-2; i >=j; i-- {
-            c, s, r := lapackd.ComputeGivens(A.Get(i, j), A.Get(i+1, j), gomas.LEFT)
+            c, s, r := lapackd.ComputeGivens(A.Get(i, j), A.Get(i+1, j))
             A.Set(i, j, r)
             A.Set(i+1, j, 0.0)
             // apply rotations on this row starting from column j, N-j column
@@ -85,7 +85,7 @@ func TestGivensLQ(t *testing.T) {
     for i := 0; i < M; i++ {
         // zero elements right of diagonal
         for j := N-2; j >= i; j-- {
-            c, s, r := lapackd.ComputeGivens(A.Get(i, j), A.Get(i, j+1), gomas.RIGHT)
+            c, s, r := lapackd.ComputeGivens(A.Get(i, j), A.Get(i, j+1))
             A.Set(i, j,   r)
             A.Set(i, j+1, 0.0)
             // apply rotation to this column starting from row i+1

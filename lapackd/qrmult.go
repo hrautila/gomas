@@ -410,27 +410,24 @@ func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags, nb int, conf *goma
  *
  *  flags Indicators. Valid indicators LEFT, RIGHT, TRANS
  *       
- *  conf  Blocking configuration. Field LB defines block sized. If it is zero
- *        unblocked invocation is assumed.
+ *  conf  Blocking configuration. Field LB defines block size. If it is zero
+ *        unblocked invocation is assumed. Actual blocking size is adjusted
+ *        to available workspace size and minimum of configured block size and
+ *        block size implied by workspace is used.
  *
  * Compatible with lapack.DORMQR
  */
 func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
-    conf := gomas.DefaultConf()
-    if len(confs) > 0 {
-        conf = confs[0]
-    }
-    wsz := WorksizeMultQ(C, flags, conf)
-    if W == nil || W.Len() < wsz {
-        return gomas.NewError(gomas.EWORK, "MultQ", wsz)
-    }
+    conf := gomas.CurrentConf(confs...)
 
     // n(A) is number of elementary reflectors defining the Q matrix
     ok := false
+    wsizer := wsMultQLeft
     switch flags & gomas.RIGHT {
     case gomas.RIGHT:
         ok = n(C) == m(A)
+        wsizer = wsMultQRight
     default:
         ok = m(C) == m(A)
     }
@@ -438,7 +435,16 @@ func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
         return gomas.NewError(gomas.ESIZE, "MultQ")
     }
 
-    if conf.LB == 0 {
+    // minimum workspace size
+    wsz := wsizer(C, 0)
+    if W == nil || W.Len() < wsz {
+        return gomas.NewError(gomas.EWORK, "MultQ", wsz)
+    }
+
+    // estimate blocking factor for current workspace
+    lb := estimateLB(C, W.Len(), wsizer)
+    lb = imin(lb, conf.LB)
+    if lb == 0 {
         if flags & gomas.RIGHT != 0 {
             unblockedMultQRight(C, A, tau, W, flags)
         } else {
@@ -446,9 +452,9 @@ func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
         }
     } else {
         if flags & gomas.RIGHT != 0 {
-            blockedMultQRight(C, A, tau, W, flags, conf.LB, conf)
+            blockedMultQRight(C, A, tau, W, flags, lb, conf)
         } else {
-            blockedMultQLeft(C, A, tau, W, flags, conf.LB, conf)
+            blockedMultQLeft(C, A, tau, W, flags, lb, conf)
         }
     }
     return err
@@ -491,10 +497,7 @@ func SolveQR(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
     var err *gomas.Error = nil
     var R, BT cmat.FloatMatrix
 
-    conf := gomas.DefaultConf()
-    if len(confs) > 0 {
-        conf = confs[0]
-    }
+    conf := gomas.CurrentConf(confs...)
 
     msz := WorksizeMultQ(B, gomas.LEFT, conf)
     if W.Len() < msz {

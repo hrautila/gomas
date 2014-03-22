@@ -22,7 +22,7 @@ import (
  */
 func unblockedQR(A, Tvec, W *cmat.FloatMatrix) {
     var ATL, ATR, ABL, ABR cmat.FloatMatrix
-    var A00, a01, A02, a10, a11, a12, A20, a21, A22 cmat.FloatMatrix
+    var A00, a11, a12, a21, A22 cmat.FloatMatrix
     var tT, tB cmat.FloatMatrix
     var t0, tau1, t2, w12  cmat.FloatMatrix
 
@@ -35,9 +35,9 @@ func unblockedQR(A, Tvec, W *cmat.FloatMatrix) {
 
     for m(&ABR) > 0 && n(&ABR) > 0 {
         util.Repartition2x2to3x3(&ATL,
-            &A00, &a01, &A02,
-            &a10, &a11, &a12,
-            &A20, &a21, &A22,   A, 1, util.PBOTTOMRIGHT)
+            &A00, nil,  nil,
+            nil,  &a11, &a12,
+            nil,  &a21, &A22,   A, 1, util.PBOTTOMRIGHT)
         util.Repartition2x1to3x1(&tT,
             &t0,
             &tau1,
@@ -61,9 +61,9 @@ func unblockedQR(A, Tvec, W *cmat.FloatMatrix) {
  * Blocked QR decomposition with compact WY transform. As implemented
  * in lapack.xGEQRF subroutine.
  */
-func blockedQR(A, Tvec, Twork, W *cmat.FloatMatrix, conf *gomas.Config) {
-    var ATL, ATR, ABL, ABR, AL, AR cmat.FloatMatrix
-    var A00, A01, A02, A10, A11, A12, A20, A21, A22 cmat.FloatMatrix
+func blockedQR(A, Tvec, Twork, W *cmat.FloatMatrix, lb int, conf *gomas.Config) {
+    var ATL, ATR, ABL, ABR, AL /*, AR*/ cmat.FloatMatrix
+    var A00, A11, A12, A21, A22 cmat.FloatMatrix
     var TT, TB cmat.FloatMatrix
     var t0, tau, t2 cmat.FloatMatrix
     var Wrk, w1 cmat.FloatMatrix
@@ -75,18 +75,18 @@ func blockedQR(A, Tvec, Twork, W *cmat.FloatMatrix, conf *gomas.Config) {
         &TT,
         &TB,  Tvec, 0, util.PTOP)
 
-    nb := conf.LB
+    nb := lb
     for m(&ABR)-nb > 0 && n(&ABR)-nb > 0 {
         util.Repartition2x2to3x3(&ATL,
-            &A00, &A01, &A02,
-            &A10, &A11, &A12,
-            &A20, &A21, &A22,   A, nb, util.PBOTTOMRIGHT)
+            &A00, nil,  nil,
+            nil,  &A11, &A12,
+            nil,  &A21, &A22,   A, nb, util.PBOTTOMRIGHT)
         util.Repartition2x1to3x1(&TT,
             &t0,
             &tau,
             &t2,     Tvec, nb, util.PBOTTOM)
-        util.Partition1x2(
-            &AL, &AR,    &ABR, nb, util.PLEFT)
+        //util.Partition1x2(
+        //    &AL, &AR,    &ABR, nb, util.PLEFT)
 
         // current block size
         cb, rb := A11.Size()
@@ -97,6 +97,7 @@ func blockedQR(A, Tvec, Twork, W *cmat.FloatMatrix, conf *gomas.Config) {
         // decompose left side AL == /A11\ 
         //                           \A21/
         w1.SubMatrix(W, 0, 0, cb, 1)
+        util.Merge2x1(&AL, &A11, &A21)
         unblockedQR(&AL, &tau, &w1)
 
         // build block reflector
@@ -247,24 +248,24 @@ func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, c
   */
 func DecomposeQR(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
-    conf := gomas.DefaultConf()
-    if len(confs) > 0 {
-        conf = confs[0]
-    }
-    wsz := WorksizeQR(A, conf)
+    conf := gomas.CurrentConf(confs...)
+
+    wsz := wsQR(A, 0)
     if W == nil || W.Len() < wsz {
         return gomas.NewError(gomas.EWORK, "DecomposeQR", wsz)
     }
 
-    if conf.LB == 0 || n(A) <= conf.LB {
+    lb := estimateLB(A, W.Len(), wsQR)
+    lb = imin(lb, conf.LB)
+    if lb == 0 || n(A) <= lb {
         unblockedQR(A, tau, W)
     } else {
         var Twork, Wrk cmat.FloatMatrix
         // block reflector T in first LB*LB elements in workspace
         // the rest, n(A)-LB*LB, is workspace for intermediate matrix operands
-        Twork.SetBuf(conf.LB, conf.LB, -1, W.Data())
-        Wrk.SetBuf(n(A)-conf.LB, conf.LB, -1, W.Data()[Twork.Len():])
-        blockedQR(A, tau, &Twork, &Wrk, conf)
+        Twork.SetBuf(lb, lb, lb, W.Data())
+        Wrk.SetBuf(n(A)-lb, lb, n(A)-lb, W.Data()[Twork.Len():])
+        blockedQR(A, tau, &Twork, &Wrk, lb, conf)
     }
     return err
 }

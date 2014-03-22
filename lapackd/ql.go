@@ -61,7 +61,7 @@ func unblockedQL(A, Tvec, W *cmat.FloatMatrix) {
  * Blocked QR decomposition with compact WY transform. As implemented
  * in lapack.xGEQRF subroutine.
  */
-func blockedQL(A, Tvec, Twork, W *cmat.FloatMatrix, conf *gomas.Config) {
+func blockedQL(A, Tvec, Twork, W *cmat.FloatMatrix, lb int, conf *gomas.Config) {
     var ATL, ATR, ABL, ABR, AL cmat.FloatMatrix
     var A00, A01, A10, A11, A22 cmat.FloatMatrix
     var TT, TB cmat.FloatMatrix
@@ -75,7 +75,7 @@ func blockedQL(A, Tvec, Twork, W *cmat.FloatMatrix, conf *gomas.Config) {
         &TT,
         &TB,  Tvec, 0, util.PBOTTOM)
 
-    nb := conf.LB
+    nb := lb
     for m(&ATL)-nb > 0 && n(&ATL)-nb > 0 {
         util.Repartition2x2to3x3(&ATL,
             &A00, &A01, nil,
@@ -256,7 +256,8 @@ func DecomposeQL(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Err
         return gomas.NewError(gomas.ESIZE, "DecomposeQL")
     }
     tauh.SubMatrix(tau, 0, 0, imin(m(A), n(A)), 1)
-    lb := conf.LB
+    lb := estimateLB(A, W.Len(), wsQL)
+    lb = imin(lb, conf.LB)
     if lb == 0 || n(A) <= lb {
         unblockedQL(A, &tauh, W)
     } else {
@@ -265,7 +266,7 @@ func DecomposeQL(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Err
         // the rest, n(A)-LB*LB, is workspace for intermediate matrix operands
         Twork.SetBuf(conf.LB, conf.LB, -1, W.Data())
         Wrk.SetBuf(n(A)-conf.LB, conf.LB, -1, W.Data()[Twork.Len():])
-        blockedQL(A, &tauh, &Twork, &Wrk, conf)
+        blockedQL(A, &tauh, &Twork, &Wrk, lb, conf)
     }
     return err
 }

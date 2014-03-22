@@ -26,7 +26,10 @@ const (
     NULL = 0
     NONE = 0
 )
-        
+
+
+// calculated machine epsilon; smallest float64 number E for which 1.0 + E != 1.0
+const Epsilon = 2.2204460492503131e-16        
 
 // Local Variables:
 // tab-width: 4

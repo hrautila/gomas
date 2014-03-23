@@ -233,7 +233,7 @@ func Partition2x2(ATL, ATR, ABL, ABR, A *cmat.FloatMatrix, mb, nb int, side Dire
             ATR.SubMatrix(A, 0, ac-nb, ar-mb, nb)
         }
         if ABL != nil {
-            ABL.SubMatrix(A, ar-mb, 0, mb, nb)
+            ABL.SubMatrix(A, ar-mb, 0, mb, ac-nb)
         }
         ABR.SubMatrix(A, ar-mb, ac-nb)
     }

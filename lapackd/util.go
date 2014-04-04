@@ -43,11 +43,14 @@ func estimateLB(A *cmat.FloatMatrix, wsz int, worksize func(*cmat.FloatMatrix, i
         // not enough for minimum blocking factor, fall to unblocked
         return 0
     }
-    for wsz > wblk {
-        lb += 2
+    k := 0
+    // guard against non-progressing worksize computation
+    for wsz > wblk && k < 100 {
+        lb += 4
         wblk = worksize(A, lb)
+        k++
     }
-    if wblk > wsz { lb -= 2 }
+    if wblk > wsz { lb -= 4 }
     return lb
 }
 

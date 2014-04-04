@@ -3,7 +3,7 @@
 
 // This file is part of github.com/hrautila/gomas package. It is free software,
 // distributed under the terms of GNU Lesser General Public License Version 3, or
-// any later version. See the COPYING tile included in this archive.
+// any later version. See the COPYING file included in this archive.
 
 package lapackd
 
@@ -15,10 +15,36 @@ import (
     //"fmt"
 )
 
+/*
+ *   QL factorization.
+ *
+ *    A = Q*L = ( Q1 Q2 )*( 0 )  = Q2*L  
+ *                        ( L )
+ *
+ *  For M-by-N matrix A the orthogonal matrix Q is product of N elementary
+ *  reflectors H(k) = I - tau*v*v.T
+ *
+ *   H(i)*A = ( H(i)  0 ) * ( A0 ) = ( H(i)*A0 )
+ *            (   0   I ) * ( A1 )   (   A1    )
+ *
+ *   H(i)*A0 = ( I - tau * ( v ) * ( v.T 1 ) ) * ( A0 )
+ *             (           ( 1 )             )   ( a1 )
+ *
+ *           = ( A0 ) - tau * ( v*v.T  v ) ( A0 )
+ *             ( a1 )         ( v.T    1 ) ( a1 )
+ *
+ *           = ( A0 - tau* (v*v.T*A0 + v*a1) )
+ *             ( a1 - tau* (v.T*A0 + a1)     )
+ *
+ *           = ( A0 - tau*v*w )  where w = v.T*A0 + a1 = A0.T*v + a1
+ *             ( a1 - tau*w   )
+ */
+
 
 /*
- * Unblocked QL decomposition. As implemented
- * in lapack.xGEQL2 subroutine.
+ * Unblocked QL decomposition. 
+ *
+ * Compatible with lapack.xGEQL2.
  */
 func unblockedQL(A, Tvec, W *cmat.FloatMatrix) {
     var ATL, ABR cmat.FloatMatrix
@@ -58,8 +84,9 @@ func unblockedQL(A, Tvec, W *cmat.FloatMatrix) {
 }
 
 /*
- * Blocked QR decomposition with compact WY transform. As implemented
- * in lapack.xGEQRF subroutine.
+ * Blocked QR decomposition with compact WY transform. 
+ *
+ * Compatible with lapack.DGEQRF.
  */
 func blockedQL(A, Tvec, Twork, W *cmat.FloatMatrix, lb int, conf *gomas.Config) {
     var ATL, ATR, ABL, ABR, AL cmat.FloatMatrix
@@ -128,10 +155,10 @@ func blockedQL(A, Tvec, Twork, W *cmat.FloatMatrix, lb int, conf *gomas.Config) 
 //      Q*C   = (I -Y*T*Y.T)*C   ==  C - Y*(C.T*Y*T.T).T 
 //
 //
-// where  C = /C1\   Y = /Y1\
-//            \C2/       \Y2/
+// where  C = ( C2 )   Y = ( Y2 )
+//            ( C1 )       ( Y1 )
 //
-// C1 is nb*K, C2 is P*K, Y1 is nb*nb TriLU, Y2 is P*nb, T is nb*nb TriL
+// C1 is nb*K, C2 is P*K, Y1 is nb*nb TriUU, Y2 is P*nb, T is nb*nb TriL
 // W = K*nb
 func updateQLLeft(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf *gomas.Config) {
     // W = C1.T
@@ -167,10 +194,10 @@ func updateQLLeft(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf *
 //      C*Q   = (I -Y*T*Y.T)*C   ==  C - C*Y*T*Y.T
 //
 //
-// where  C = ( C1 C2 )   Y = ( Y1 )
-//                            ( Y2 )
+// where  C = ( C2 C1 )   Y = ( Y2 )
+//                            ( Y1 )
 //
-// C1 is K*nb, C2 is K*P, Y1 is nb*nb trilu, Y2 is P*nb, T is nb*nb
+// C1 is K*nb, C2 is K*P, Y1 is nb*nb TriUU, Y2 is P*nb, T is nb*nb TriL
 // W = K*nb
 func updateQLRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf *gomas.Config) {
     // -- compute: W = C*Y = C1*Y1 + C2*Y2
@@ -195,7 +222,7 @@ func updateQLRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf 
     blasd.Mult(C2, W, Y2, -1.0, 1.0, gomas.TRANSB, conf)
     // C1 = C1 - W*Y1.T
     //  W = W*Y1 
-    blasd.MultTrm(W, Y1, 1.0, gomas.LOWER|gomas.UNIT|gomas.RIGHT|gomas.TRANSA, conf)
+    blasd.MultTrm(W, Y1, 1.0, gomas.UPPER|gomas.UNIT|gomas.RIGHT|gomas.TRANSA, conf)
     // C1 = C1 - W
     blasd.Plus(C1, W, 1.0, -1.0, gomas.NONE)
     // --- here: C = (I - Y*T*Y.T).T * C ---
@@ -273,7 +300,7 @@ func DecomposeQL(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Err
 
 func wsQL(A *cmat.FloatMatrix, lb int) int {
     sz := n(A)
-    if lb > 0 && n(A) > lb {
+    if lb > 0 /*&& n(A) > lb*/ {
         sz = (n(A)+lb)*lb
     }
     return sz

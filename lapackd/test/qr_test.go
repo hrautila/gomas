@@ -328,6 +328,50 @@ func TestBlockedMultQRightIdent(t *testing.T) {
 	t.Logf("M=%d,N=%d  ||A - (A.T*Q*Q.T).T||_1: %e\n", M, N, nrm)
 }
 
+func TestBuildQR(t *testing.T) {
+    var d cmat.FloatMatrix
+
+    M := 911
+    N := 899
+    K := 873
+    lb := 36
+    conf := gomas.NewConf()
+
+    A := cmat.NewMatrix(M, N)
+    src := cmat.NewFloatNormSource()
+    A.SetFrom(src)
+    tau := cmat.NewMatrix(N, 1)
+    W := cmat.NewMatrix(N+M, 1)
+
+    C := cmat.NewMatrix(N, N)
+    d.Diag(C)
+    
+    conf.LB = lb
+    lapackd.DecomposeQR(A, tau, W, conf)
+    A1 := cmat.NewCopy(A)
+
+    conf.LB = 0
+    lapackd.BuildQR(A, tau, W, K, conf)
+
+    blasd.Mult(C, A, A,  1.0, 0.0, gomas.TRANSA, conf)
+    blasd.Add(&d, -1.0)
+    n0 := lapackd.NormP(C, lapackd.NORM_ONE)
+
+    conf.LB = lb
+    W2 := lapackd.Workspace(lapackd.WorksizeBuildQR(A, conf))
+    lapackd.BuildQR(A1, tau, W2, K, conf)
+
+    blasd.Mult(C, A1, A1,  1.0, 0.0, gomas.TRANSA, conf)
+    blasd.Add(&d, -1.0)
+    n1 := lapackd.NormP(C, lapackd.NORM_ONE)
+
+    blasd.Plus(A, A1, 1.0, -1.0, gomas.NONE)
+    n2 := lapackd.NormP(A, lapackd.NORM_ONE)
+
+    t.Logf("M=%d, N=%d, K=%d ||unblk.BuildQR(A) - blk.BuildQR(A)||_1 :%e\n", M, N, K, n2)
+    t.Logf("unblk M=%d, N=%d, K=%d ||I - Q.T*Q||_1: %e\n", M, N, K, n0)
+    t.Logf("  blk M=%d, N=%d, K=%d ||I - Q.T*Q||_1: %e\n", M, N, K, n1)
+}
 
 
 // Local Variables:

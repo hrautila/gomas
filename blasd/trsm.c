@@ -259,6 +259,10 @@ void __solve_blocked(mdata_t *B, const mdata_t *A, DTYPE alpha,
     KB = MAX_KB;
   }
 
+  // set to zero in order avoid NaN values later
+  memset(Abuf, 0, sizeof(Abuf));
+  memset(Bbuf, 0, sizeof(Bbuf));
+
   Acpy = (mdata_t){Abuf, MAX_KB};
   Bcpy = (mdata_t){Bbuf, MAX_KB};
   cache = (cache_t){&Acpy, &Bcpy, KB, NB, MB};

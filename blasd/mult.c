@@ -205,6 +205,10 @@ void __gemm_inner(mdata_t *C, const mdata_t *A, const mdata_t *B,
     KB = MAX_KB;
   }
 
+  // set to zero in order avoid NaN values later
+  memset(Abuf, 0, sizeof(Abuf));
+  memset(Bbuf, 0, sizeof(Bbuf));
+
   if (alpha == 0.0) {
     __subblock(&Aa, C, R, S);
     __blk_scale(&Aa, beta, E-R, L-S);

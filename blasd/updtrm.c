@@ -94,6 +94,10 @@ void __update_trm_naive(mdata_t *C, const mdata_t *A, const mdata_t *B,
     KB = MAX_KB;
   }
 
+  // set to zero in order avoid NaN values later
+  memset(Abuf, 0, sizeof(Abuf));
+  memset(Bbuf, 0, sizeof(Bbuf));
+
   Acpy = (mdata_t){Abuf, MAX_KB};
   Bcpy = (mdata_t){Bbuf, MAX_KB};
   cache = (cache_t){&Acpy, &Bcpy, KB, NB, MB};
@@ -234,6 +238,10 @@ void __update_trm_recursive(mdata_t *C, const mdata_t *A, const mdata_t *B,
   if (KB > MAX_KB || KB <= 0) {
     KB = MAX_KB;
   }
+
+  // set to zero in order avoid NaN values later
+  memset(Abuf, 0, sizeof(Abuf));
+  memset(Bbuf, 0, sizeof(Bbuf));
 
   Acpy = (mdata_t){Abuf, MAX_KB};
   Bcpy = (mdata_t){Bbuf, MAX_KB};

@@ -10,6 +10,7 @@
 #ifndef __GOMAS_DBLE_INTERFACES_H
 #define __GOMAS_DBLE_INTERFACES_H
 
+#include <string.h>
 #include "dtype.h"
 
 enum armas_flags {

@@ -81,35 +81,42 @@ and 2.4 GHz clock rate we get 7.04 operations/cycle, ~ 88% of theoretical maximu
 
 ### Lapack
   
-    DecomposeBK(A, W, flags, conf)              LDL.T factorization (DSYTRF)
-    DecomposeCHOL(A, conf)                      Cholesky factorization (DPOTRF)
-    DecomposeLUnoPiv(A, conf)                   LU factorization without pivoting
-    DecomposeLU(A, pivots, conf)                LU factorization with pivoting (DGETRF)
-    DecomposeLQ(A, tau, W, conf)                LQ factorization (DGELQF)
-    DecomposeQR(A, tau, W, conf)                QR factorization (DGEQRF)
-    DecomposeQRT(A, T, W, conf)                 QR factorization with compact WY transformation (DGEQRT)
-    MultLQ(C, A, tau, W, flags, conf)           Multiply with Q or Q.T  (DORMLQ)
-    MultQ(C, A, tau, W, flags, conf)            Multiply with Q or Q.T  (DORMQR)
-    MultQT(C, A, T, W, flags, conf)             Multiply with Q or Q.T, compact WY transformation (DORGQR)
-    MultQHess(C, A, tau, W, flags, conf)        Multiply with Hessengerg Q matrix (DORMHR)
-    MultBidiag(C, A, tau, W, flags, conf)       Multiply with bidiagonal Q or P matrix (DORMBR)
-    ReduceBidiag(A, tauq, taup, W, conf)        Bidiagonal reduction (DGEBRD)
-    ReduceHess(A, tau, W, conf)                 Hessenberg reduction. (DGEHRD)
-    SolveBK(B, A, W, flags, conf)               Solve LDL.T factorized linear system (DSYTRS)
-    SolveCHOL(B, A, flags, conf)                Solve Cholesky factorized linear system (DPOTRS)
-    SolveLU(B, A, pivots, flags, conf)          Solve LU factorized linear system (DGETRS)
-    SolveLQ(B, A, W, flags, conf)               Solve LQ factorized linear system
-    SolveQR(B, A, W, flags, conf)               Solve QR factorized linear system
-    SolveQRT(B, A, W, flags, conf)              Solve QRWY factorized linear system
-
-    WorksizeBK(A, conf)                         Compute worksize needed for LDL.T  factorization
-    WorksizeQR(A, conf)                         Compute worksize needed for QR factorization
-    WorksizeQRT(A, conf)                        Compute worksize needed for QRWY factorization
-    WorksizeMultQ(A, conf)                      Compute worksize for MultQ
-    WorksizeMultQT(A, conf)                     Compute worksize for MultQT
-    Workspace(size)                             Create workspace
+    BDMult(C, A, tau, W, flags, conf)           Multiply with bidiagonal Q or P matrix (DORMBR)
+    BDReduce(A, tauq, taup, W, conf)            Bidiagonal reduction (DGEBRD)
+    BKFactor(A, W, flags, conf)                 Bunch-Kauffman LDL.T factorization (DSYTRF)
+    BKSolve(B, A, W, flags, conf)               Solve LDL.T factorized linear system (DSYTRS)
+    CHOLFactor(A, conf)                         Cholesky factorization (DPOTRF)
+    CHOLSolve(B, A, flags, conf)                Solve Cholesky factorized linear system (DPOTRS)
+    HessMult(C, A, tau, W, flags, conf)         Multiply with Hessenberg Q matrix (DORMHR)
+    HessReduce(A, tau, W, conf)                 Hessenberg reduction. (DGEHRD)
+    LUFactor(A, pivots, conf)                   LU factorization with pivoting (DGETRF)
+    LUSolve(B, A, pivots, flags, conf)          Solve LU factorized linear system (DGETRS)
+    LQBuild(A, tau, W, K, conf)                 Generate Q for LQ decomposition (DORGLQ)
+    LQFactor(A, tau, W, conf)                   LQ factorization (DGELQF)
+    LQMult(C, A, tau, W, flags, conf)           Multiply with Q or Q.T  (DORMLQ)
+    LQSolve(B, A, W, flags, conf)               Solve LQ factorized linear system
+    QLBuild(A, tau, W, K, conf)                 Generate Q for QL decomposition (DORGQL)
+    QLFactor(A, tau, W, conf)                   QL factorization (DGEQLF)
+    QLMult(C, A, tau, W, flags, conf)           Multiply with Q or Q.T  (DORMQL)
+    QRBuild(A, tau, W, K, conf)                 Generate Q for QR decomposition (DORGQR)
+    QRFactor(A, tau, W, conf)                   QR factorization (DGEQRF)
+    QRMult(C, A, tau, W, flags, conf)           Multiply with Q or Q.T  (DORMQR)
+    QRSolve(B, A, W, flags, conf)               Solve QR factorized linear system
+    QRTFactor(A, T, W, conf)                    QR factorization with compact WY transformation (DGEQRT)
+    QRTMult(C, A, T, W, flags, conf)            Multiply with Q or Q.T, compact WY transformation (DORMQR)
+    QRTSolve(B, A, W, flags, conf)              Solve QRWY factorized linear system
+    TRDReduce(A, tau, W, flags, conf)           Tridiagonal reduction (DGETRD)
 
 ###  Other
+
+    BKFactorWork(A, conf)                       Compute worksize needed for LDL.T  factorization
+    LQFactorWork(A, conf)                       Compute worksize needed for QR factorization
+    QLFactorWork(A, conf)                       Compute worksize needed for QR factorization
+    QRFactorWork(A, conf)                       Compute worksize needed for QR factorization
+    QRTFactorWork(A, conf)                      Compute worksize needed for QRWY factorization
+    QRMultWork(A, flags, con                    Compute worksize for QRMult
+    QRTMultWork(A, flags, co                    Compute worksize for QRTMult
+    Workspace(size)                             Create workspace
 
     DefaultConf()                               Get default blocking configuration 
     NewConf()                                   Create a new blocking configuration

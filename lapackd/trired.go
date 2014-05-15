@@ -524,7 +524,7 @@ func blkReduceTridiagUpper(A, tauq, Y, W *cmat.FloatMatrix, lb int, conf *gomas.
  *   ( v1 v2 e  d  . )         ( .  .  .  d  e  )
  *   ( v1 v2 v3 e  d )         ( .  .  .  .  d  )
  */
-func ReduceTridiag(A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func TRDReduce(A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     var Y cmat.FloatMatrix
 
@@ -565,12 +565,12 @@ func wsTridiag(A *cmat.FloatMatrix, lb int) int {
     return lb*m(A)
 }
 
-func WorksizeTridiag(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func TRDReduceWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsTridiag(A, conf.LB)
 }
 
-func MultTridiag(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func TRDMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     return err
 }

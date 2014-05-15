@@ -33,12 +33,12 @@ func TestReduceHess(t *testing.T) {
     tau0 := cmat.NewCopy(tau)
 
     // blocked reduction
-    W := lapackd.Workspace(lapackd.WorksizeHess(A, conf))
-    lapackd.ReduceHess(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.HessReduceWork(A, conf))
+    lapackd.HessReduce(A, tau, W, conf)
     
     // unblocked reduction
     conf.LB = 0
-    lapackd.ReduceHess(A0, tau0, W, conf)
+    lapackd.HessReduce(A0, tau0, W, conf)
 
     ok := A.AllClose(A0)
     t.Logf("blk.ReduceHess(A) == unblk.ReduceHess(A): %v\n", ok)
@@ -67,8 +67,8 @@ func TestMultHess(t *testing.T) {
     A0 := cmat.NewCopy(A)
 
     // reduction
-    W := lapackd.Workspace(lapackd.WorksizeHess(A, conf))
-    lapackd.ReduceHess(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.HessReduceWork(A, conf))
+    lapackd.HessReduce(A, tau, W, conf)
 
     var Hlow cmat.FloatMatrix
     H := cmat.NewCopy(A)
@@ -81,13 +81,13 @@ func TestMultHess(t *testing.T) {
 
     // H := Q*H*Q.T
     conf.LB = nb
-    lapackd.MultQHess(H, A, tau, W, gomas.LEFT, conf)
-    lapackd.MultQHess(H, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.HessMult(H, A, tau, W, gomas.LEFT, conf)
+    lapackd.HessMult(H, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
 
     // H := Q*H*Q.T
     conf.LB = 0
-    lapackd.MultQHess(H1, A, tau, W, gomas.LEFT, conf)
-    lapackd.MultQHess(H1, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.HessMult(H1, A, tau, W, gomas.LEFT, conf)
+    lapackd.HessMult(H1, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
 
     // compute ||Q*Hess(A)*Q.T - A||_1
     blasd.Plus(H, A0, 1.0, -1.0, gomas.NONE)

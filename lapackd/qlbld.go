@@ -174,7 +174,7 @@ func blkBuildQL(A, Tvec, Twork, W *cmat.FloatMatrix, K, lb int, conf *gomas.Conf
  *
  * Compatible with lapackd.ORGQL.
  */
-func BuildQL(A, tau, W *cmat.FloatMatrix, K int, confs... *gomas.Config) *gomas.Error {
+func QLBuild(A, tau, W *cmat.FloatMatrix, K int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
     if K <= 0 || K > n(A) {
@@ -208,7 +208,7 @@ func wsBuildQL(A *cmat.FloatMatrix, lb int) int {
     return n(A)
 }
 
-func WorksizeBuildQL(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func QLBuildWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsBuildQL(A, conf.LB)
 }

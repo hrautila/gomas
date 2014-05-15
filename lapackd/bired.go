@@ -820,7 +820,7 @@ func blkBidiagRight(A, tauq, taup, W *cmat.FloatMatrix, lb int, conf *gomas.Conf
  *    (  u1  u2  u3  u4  d  )           (  u1  u2  u3  e   d   v5 )
  *    (  u1  u2  u3  u4  u5 )
  */
-func ReduceBidiag(A, tauq, taup, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func BDReduce(A, tauq, taup, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
     _ = conf
@@ -887,7 +887,7 @@ func ReduceBidiag(A, tauq, taup, W *cmat.FloatMatrix, confs... *gomas.Config) *g
  *        MULTP,TRANS,RIGHT  C = C*P.T   n(C) == m(A)
  *
  */
-func MultBidiag(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func BDMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var Qh, Ch, Ph, tauh cmat.FloatMatrix
     var err *gomas.Error = nil
 
@@ -907,7 +907,7 @@ func MultBidiag(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Confi
         switch flags & (gomas.MULTQ|gomas.MULTP) {
         case gomas.MULTQ:
             tauh.SubMatrix(tau, 0, 0, n(A), 1)
-            err = MultQ(C, A, &tauh, W, flags, confs...)
+            err = QRMult(C, A, &tauh, W, flags, confs...)
 
         case gomas.MULTP:
             Ph.SubMatrix(A, 0, 1, n(A)-1, n(A)-1)
@@ -917,7 +917,7 @@ func MultBidiag(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Confi
             } else {
                 Ch.SubMatrix(C, 1, 0, m(C)-1, n(C))
             }
-            err = MultLQ(&Ch, &Ph, &tauh, W, flags, confs...)
+            err = LQMult(&Ch, &Ph, &tauh, W, flags, confs...)
         }
     } else {
         switch flags & (gomas.MULTQ|gomas.MULTP) {
@@ -929,11 +929,11 @@ func MultBidiag(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Confi
             } else {
                 Ch.SubMatrix(C, 1, 0, m(C)-1, n(C))
             }
-            err = MultQ(&Ch, &Qh, &tauh, W, flags, confs...)
+            err = QRMult(&Ch, &Qh, &tauh, W, flags, confs...)
 
         case gomas.MULTP: 
             tauh.SubMatrix(tau, 0, 0, m(A), 1)
-            err = MultLQ(C, A, &tauh, W, flags, confs...)
+            err = LQMult(C, A, &tauh, W, flags, confs...)
         }
     }
     if err != nil {
@@ -973,12 +973,12 @@ func wsMultBidiagRight(A *cmat.FloatMatrix, lb int) int  {
  * Calculate worksize needed for bidiagonal reduction with a blocking
  * configuration.
  */
-func WorksizeBidiag(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func BDReduceWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsBired(A, conf.LB)
 }
 
-func WorksizeMultBidiag(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func BDMultWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     nl := wsMultBidiagLeft(A, conf.LB)
     nr := wsMultBidiagRight(A, conf.LB)

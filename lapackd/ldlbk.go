@@ -48,14 +48,14 @@ const bkALPHA = 0.6403882032022075   // (1.0 + sqrt(17.0))/8.0
  *
  *  Compatible with lapack.SYTRF.
  */
- func DecomposeBK(A, W *cmat.FloatMatrix, ipiv Pivots, flags int, confs... *gomas.Config) *gomas.Error {
+ func BKFactor(A, W *cmat.FloatMatrix, ipiv Pivots, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
     
     for k, _ := range ipiv {
         ipiv[k] = 0
     }
-    wsz := WorksizeBK(A, conf)
+    wsz := BKFactorWork(A, conf)
     if W.Len() < wsz {
         return gomas.NewError(gomas.EWORK, "DecomposeBK", wsz)
     }
@@ -85,13 +85,13 @@ const bkALPHA = 0.6403882032022075   // (1.0 + sqrt(17.0))/8.0
  * Solve A*X = B with symmetric real matrix A.
  *
  * Solves a system of linear equations A*X = B with a real symmetric matrix A using
- * the factorization A = U*D*U**T or A = L*D*L**T computed by DecomposeBK().
+ * the factorization A = U*D*U**T or A = L*D*L**T computed by BKFactor().
  *
  * Arguments
  *  B     On entry, right hand side matrix B. On exit, the solution matrix X.
  *
  *  A     Block diagonal matrix D and the multipliers used to compute factor U
- *        (or L) as returned by DecomposeBK().
+ *        (or L) as returned by BKFactor().
  *
  *  ipiv  Block structure of matrix D and details of interchanges.
  *
@@ -101,7 +101,7 @@ const bkALPHA = 0.6403882032022075   // (1.0 + sqrt(17.0))/8.0
  *
  * Currently only unblocked algorightm implemented. Compatible with lapack.SYTRS.
  */
- func SolveBK(B, A *cmat.FloatMatrix, ipiv Pivots, flags int, confs... *gomas.Config) *gomas.Error {
+ func BKSolve(B, A *cmat.FloatMatrix, ipiv Pivots, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
     if n(A) != m(B) {
@@ -126,7 +126,7 @@ const bkALPHA = 0.6403882032022075   // (1.0 + sqrt(17.0))/8.0
 /*
  * Return worksize needed to compute Bunch-Kauffman LDL^T factorization.
  */
-func WorksizeBK(A *cmat.FloatMatrix, conf *gomas.Config) int {
+func BKFactorWork(A *cmat.FloatMatrix, conf *gomas.Config) int {
     if n(A) < conf.LB || conf.LB == 0 {
         return 2*m(A)
     }

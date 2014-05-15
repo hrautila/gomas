@@ -394,14 +394,14 @@ func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags, nb int, conf *goma
  *
  *    Q = H(1) H(2) . . . H(k)
  *
- * as returned by DecomposeQR().
+ * as returned by QRFactor().
  *
  * Arguments:
  *  C     On entry, the M-by-N matrix C or if flag bit RIGHT is set then N-by-M matrix
  *        On exit C is overwritten by Q*C or Q.T*C. If bit RIGHT is set then C is
  *        overwritten by C*Q or C*Q.T
  *
- *  A     QR factorization as returne by DecomposeQR() where the lower trapezoidal
+ *  A     QR factorization as returned by QRFactor() where the lower trapezoidal
  *        part holds the elementary reflectors.
  *
  *  tau   The scalar factors of the elementary reflectors.
@@ -417,7 +417,7 @@ func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags, nb int, conf *goma
  *
  * Compatible with lapack.DORMQR
  */
-func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func QRMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
 
@@ -463,7 +463,7 @@ func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
 
 /*
  * Solve a system of linear equations A*X = B with general M-by-N
- * matrix A using the QR factorization computed by DecomposeQR().
+ * matrix A using the QR factorization computed by QRFactor().
  *
  * If flags&TRANS != 0:
  *   find the minimum norm solution of an overdetermined system A.T * X = B.
@@ -484,7 +484,7 @@ func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
  *  tau   The vector of N scalar coefficients that together with trilu(A) define
  *        the ortogonal matrix Q as Q = H(1)H(2)...H(N)
  *
- *  W     Workspace, size required returned WorksizeMultQ().
+ *  W     Workspace, size required returned QRSolveWork().
  *
  *  flags Indicator flags
  *
@@ -493,13 +493,13 @@ func MultQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
  *
  * Compatible with lapack.GELS (the m >= n part)
  */
-func SolveQR(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func QRSolve(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     var R, BT cmat.FloatMatrix
 
     conf := gomas.CurrentConf(confs...)
 
-    msz := WorksizeMultQ(B, gomas.LEFT, conf)
+    msz := QRMultWork(B, gomas.LEFT, conf)
     if W.Len() < msz {
         return gomas.NewError(gomas.EWORK, "SolveQR", msz)
     }
@@ -517,12 +517,12 @@ func SolveQR(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
         BT.SetFrom(cmat.NewFloatConstSource(0.0))
         
         // X = Q*B'
-        err = MultQ(B, A, tau, W, gomas.LEFT, conf)
+        err = QRMult(B, A, tau, W, gomas.LEFT, conf)
     } else {
         // solve least square problem min ||A*X - B||
 
         // B' = Q.T*B
-        err = MultQ(B, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
+        err = QRMult(B, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
         if err != nil {
             return err
         }
@@ -541,7 +541,7 @@ func SolveQR(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
  * Calculate workspace size needed to compute C*Q or Q*C with QR decomposition
  * computed with DecomposeQR().
  */
-func WorksizeMultQ(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz int) {
+func QRMultWork(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz int) {
     conf := gomas.CurrentConf(confs...)
     switch bits & gomas.RIGHT {
     case gomas.RIGHT:
@@ -552,7 +552,7 @@ func WorksizeMultQ(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz in
     return 
 }
 
-func WorksizeSolveQR(C *cmat.FloatMatrix, confs... *gomas.Config) int {
+func QRSolveWork(C *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsMultQLeft(C, conf.LB)
 }

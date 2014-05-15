@@ -244,12 +244,14 @@ func blockedLUpiv(A *cmat.FloatMatrix, p *Pivots, nb int, conf *gomas.Config) *g
  *
  * Compatible with lapack.DGETRF
  */
-func DecomposeLU(A *cmat.FloatMatrix, pivots Pivots, confs... *gomas.Config) *gomas.Error {
+func LUFactor(A *cmat.FloatMatrix, pivots Pivots, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
-    conf := gomas.DefaultConf()
-    if len(confs) > 0 {
-        conf = confs[0]
+    conf := gomas.CurrentConf(confs...)
+
+    if pivots == nil {
+        return luFactorNoPiv(A, confs...)
     }
+
     mlen := imin(m(A), n(A))
     if len(pivots) < mlen {
         return gomas.NewError(gomas.ESIZE_PIVOTS, "DecomposeLU")
@@ -282,7 +284,7 @@ func DecomposeLU(A *cmat.FloatMatrix, pivots Pivots, confs... *gomas.Config) *go
  *
  * Compatible with lapack.DGETRF
  */
-func DecomposeLUnoPiv(A *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func luFactorNoPiv(A *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.DefaultConf()
     if len(confs) > 0 {
@@ -299,15 +301,15 @@ func DecomposeLUnoPiv(A *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error 
 
 /*
  * Solve a system of linear equations A*X = B or A.T*X = B with general N-by-N
- * matrix A using the LU factorization computed by DecomposeLU().
+ * matrix A using the LU factorization computed by LUFactor().
  *
  * Arguments:
  *  B      On entry, the right hand side matrix B. On exit, the solution matrix X.
  *
  *  A      The factor L and U from the factorization A = P*L*U as computed by
- *         DecomposeLU()
+ *         LUFactor()
  *
- *  pivots The pivot indices from DecomposeLU().
+ *  pivots The pivot indices from LUFactor().
  *
  *  flags  The indicator of the form of the system of equations.
  *         If flags&TRANSA then system is transposed. All other values
@@ -315,7 +317,7 @@ func DecomposeLUnoPiv(A *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error 
  *
  * Compatible with lapack.DGETRS.
  */
-func SolveLU(B, A *cmat.FloatMatrix, pivots Pivots, flags int, confs... *gomas.Config) *gomas.Error {
+func LUSolve(B, A *cmat.FloatMatrix, pivots Pivots, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.DefaultConf()
     if len(confs) > 0 {

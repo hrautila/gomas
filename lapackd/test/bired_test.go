@@ -35,8 +35,8 @@ func TestBidiagReduceUnblocked(t *testing.T) {
 
     W := lapackd.Workspace(M+N)
 
-    lapackd.ReduceBidiag(A, tauq, taup, W, conf)
-    lapackd.ReduceBidiag(At, tauqt, taupt, W, conf)
+    lapackd.BDReduce(A, tauq, taup, W, conf)
+    lapackd.BDReduce(At, tauqt, taupt, W, conf)
 
     // BiRed(A) == BiRed(A.T).T
     blasd.Plus(At, A, 1.0, -1.0, gomas.TRANSB)
@@ -72,9 +72,9 @@ func TestBidiagReduceBlockedTall(t *testing.T) {
     W := lapackd.Workspace(M+N)
     W1 := lapackd.Workspace(nb*(M+N+1))
 
-    lapackd.ReduceBidiag(A, tauq, taup, W, conf)
+    lapackd.BDReduce(A, tauq, taup, W, conf)
     conf.LB = nb
-    lapackd.ReduceBidiag(A1, tauq1, taup1, W1, conf)
+    lapackd.BDReduce(A1, tauq1, taup1, W1, conf)
 
     // unblk.BiRed(A) == blk.BiRed(A)
     blasd.Plus(A1, A, 1.0, -1.0, gomas.NONE)
@@ -110,10 +110,10 @@ func TestReduceBidiagBlkWide(t *testing.T) {
 
     W := lapackd.Workspace(M+N)
 
-    lapackd.ReduceBidiag(A, tauq, taup, W, conf)
+    lapackd.BDReduce(A, tauq, taup, W, conf)
     conf.LB = nb
-    W1 := lapackd.Workspace(lapackd.WorksizeBidiag(A1, conf))
-    lapackd.ReduceBidiag(A1, tauq1, taup1, W1, conf)
+    W1 := lapackd.Workspace(lapackd.BDReduceWork(A1, conf))
+    lapackd.BDReduce(A1, tauq1, taup1, W1, conf)
 
     // BiRed(A) == BiRed(A.T).T
     blasd.Plus(A1, A, 1.0, -1.0, gomas.NONE)
@@ -145,7 +145,7 @@ func TestBiredTall(t *testing.T) {
     taup := cmat.NewMatrix(N, 1)
 
     W := lapackd.Workspace(M+N)
-    lapackd.ReduceBidiag(A, tauq, taup, W, conf)
+    lapackd.BDReduce(A, tauq, taup, W, conf)
 
     var D, E, Bd, Be cmat.FloatMatrix
     D.Diag(A)
@@ -161,12 +161,12 @@ func TestBiredTall(t *testing.T) {
     blasd.Transpose(Bt, B)
 
     conf.LB = nb
-    W0 := lapackd.Workspace(lapackd.WorksizeMultBidiag(B, conf))
-    lapackd.MultBidiag(B, A, tauq, W0, gomas.MULTQ|gomas.LEFT, conf)
-    lapackd.MultBidiag(B, A, taup, W0, gomas.MULTP|gomas.RIGHT|gomas.TRANS, conf)
+    W0 := lapackd.Workspace(lapackd.BDMultWork(B, conf))
+    lapackd.BDMult(B, A, tauq, W0, gomas.MULTQ|gomas.LEFT, conf)
+    lapackd.BDMult(B, A, taup, W0, gomas.MULTP|gomas.RIGHT|gomas.TRANS, conf)
 
-    lapackd.MultBidiag(Bt, A, taup, W0, gomas.MULTP|gomas.LEFT, conf)
-    lapackd.MultBidiag(Bt, A, tauq, W0, gomas.MULTQ|gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.BDMult(Bt, A, taup, W0, gomas.MULTP|gomas.LEFT, conf)
+    lapackd.BDMult(Bt, A, tauq, W0, gomas.MULTQ|gomas.RIGHT|gomas.TRANS, conf)
 
     blasd.Plus(B, A0, 1.0, -1.0, gomas.NONE)
     nrm := lapackd.NormP(B, lapackd.NORM_ONE)
@@ -194,7 +194,7 @@ func TestBiredWide(t *testing.T) {
     taup := cmat.NewMatrix(N, 1)
 
     W := lapackd.Workspace(M+N)
-    lapackd.ReduceBidiag(A, tauq, taup, W, conf)
+    lapackd.BDReduce(A, tauq, taup, W, conf)
 
     var D, E, Bd, Be cmat.FloatMatrix
     D.Diag(A)
@@ -210,12 +210,12 @@ func TestBiredWide(t *testing.T) {
     blasd.Transpose(Bt, B)
 
     conf.LB = nb
-    W0 := lapackd.Workspace(lapackd.WorksizeMultBidiag(B, conf))
-    lapackd.MultBidiag(B,  A, tauq, W0, gomas.MULTQ|gomas.LEFT, conf)
-    lapackd.MultBidiag(Bt, A, tauq, W0, gomas.MULTQ|gomas.RIGHT|gomas.TRANS, conf)
+    W0 := lapackd.Workspace(lapackd.BDMultWork(B, conf))
+    lapackd.BDMult(B,  A, tauq, W0, gomas.MULTQ|gomas.LEFT, conf)
+    lapackd.BDMult(Bt, A, tauq, W0, gomas.MULTQ|gomas.RIGHT|gomas.TRANS, conf)
 
-    lapackd.MultBidiag(B,  A, taup, W0, gomas.MULTP|gomas.RIGHT|gomas.TRANS, conf)
-    lapackd.MultBidiag(Bt, A, taup, W0, gomas.MULTP|gomas.LEFT, conf)
+    lapackd.BDMult(B,  A, taup, W0, gomas.MULTP|gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.BDMult(Bt, A, taup, W0, gomas.MULTP|gomas.LEFT, conf)
 
     blasd.Plus(B, A0, 1.0, -1.0, gomas.NONE)
     nrm := lapackd.NormP(B, lapackd.NORM_ONE)

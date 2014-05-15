@@ -33,8 +33,8 @@ func TestUnblockedDecomposeCHOL(t *testing.T) {
     blasd.Mult(AL, Z, Z, 1.0, 0.0, gomas.TRANSB)
     AU.Copy(AL)
 
-    eu := lapackd.DecomposeCHOL(AU, gomas.UPPER, conf)
-    el := lapackd.DecomposeCHOL(AL, gomas.LOWER, conf)
+    eu := lapackd.CHOLFactor(AU, gomas.UPPER, conf)
+    el := lapackd.CHOLFactor(AL, gomas.LOWER, conf)
     _, _ = eu, el
 
     Z.Transpose(AU)
@@ -63,8 +63,8 @@ func TestBlockedDecomposeCHOL(t *testing.T) {
     blasd.Mult(AL, Z, Z, 1.0, 0.0, gomas.TRANSB)
     AU.Copy(AL)
 
-    eu := lapackd.DecomposeCHOL(AU, gomas.UPPER, conf)
-    el := lapackd.DecomposeCHOL(AL, gomas.LOWER, conf)
+    eu := lapackd.CHOLFactor(AU, gomas.UPPER, conf)
+    el := lapackd.CHOLFactor(AL, gomas.LOWER, conf)
     _, _ = eu, el
 
     Z.Transpose(AU)
@@ -102,9 +102,9 @@ func TestUpperCHOL(t *testing.T) {
 
     // A = chol(A) = U.T*U
     t.Logf("Unblocked version: nb=%d\n", conf.LB)
-    lapackd.DecomposeCHOL(A, gomas.UPPER, conf)
+    lapackd.CHOLFactor(A, gomas.UPPER, conf)
     // X = A.-1*B = U.-1*(U.-T*B)
-    lapackd.SolveCHOL(X, A, gomas.UPPER)
+    lapackd.CHOLSolve(X, A, gomas.UPPER)
     // B = B - A*X
     blasd.Mult(B, A0, X, -1.0, 1.0, gomas.NONE)
     // ||B - A*X||_1
@@ -117,9 +117,9 @@ func TestUpperCHOL(t *testing.T) {
     X.Copy(B)
     conf.LB = 16
     t.Logf("Blocked version: nb=%d\n", conf.LB)
-    lapackd.DecomposeCHOL(A, gomas.UPPER, conf)
+    lapackd.CHOLFactor(A, gomas.UPPER, conf)
     // X = A.-1*B = U.-1*(U.-T*B)
-    lapackd.SolveCHOL(X, A, gomas.UPPER)
+    lapackd.CHOLSolve(X, A, gomas.UPPER)
     // B = B - A*X
     blasd.Mult(B, A0, X, -1.0, 1.0, gomas.NONE)
     // ||B - A*X||_1
@@ -154,9 +154,9 @@ func TestLowerCHOL(t *testing.T) {
 
     // R = chol(A) = L*L.T
     t.Logf("Unblocked version: nb=%d\n", conf.LB)
-    lapackd.DecomposeCHOL(A, gomas.LOWER, conf)
+    lapackd.CHOLFactor(A, gomas.LOWER, conf)
     // X = A.-1*B = L.-T*(L.-1*B)
-    lapackd.SolveCHOL(X, A, gomas.LOWER)
+    lapackd.CHOLSolve(X, A, gomas.LOWER)
     // B = B - A*X
     blasd.Mult(B, A0, X, -1.0, 1.0, gomas.NONE)
     nrm := lapackd.NormP(B, lapackd.NORM_ONE)
@@ -169,9 +169,9 @@ func TestLowerCHOL(t *testing.T) {
     conf.LB = 16
     // R = chol(A) = L*L.T
     t.Logf("Bblocked version: nb=%d\n", conf.LB)
-    lapackd.DecomposeCHOL(A, gomas.LOWER, conf)
+    lapackd.CHOLFactor(A, gomas.LOWER, conf)
     // X = A.-1*B = L.-T*(L.-1*B)
-    lapackd.SolveCHOL(X, A, gomas.LOWER)
+    lapackd.CHOLSolve(X, A, gomas.LOWER)
     // B = B - A*X
     blasd.Mult(B, A0, X, -1.0, 1.0, gomas.NONE)
     nrm = lapackd.NormP(B, lapackd.NORM_ONE)

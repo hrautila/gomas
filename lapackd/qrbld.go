@@ -181,7 +181,7 @@ func blkBuildQRQ(A, Tvec, Twork, W *cmat.FloatMatrix, K, lb int, conf *gomas.Con
  *
  * Compatible with lapackd.ORGQR.
  */
-func BuildQR(A, tau, W *cmat.FloatMatrix, K int, confs... *gomas.Config) *gomas.Error {
+func QRBuild(A, tau, W *cmat.FloatMatrix, K int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
     if K <= 0 || K > n(A) {
@@ -215,7 +215,7 @@ func wsBuildQR(A *cmat.FloatMatrix, lb int) int {
     return n(A)
 }
 
-func WorksizeBuildQR(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func QRBuildWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsBuildQR(A, conf.LB)
 }

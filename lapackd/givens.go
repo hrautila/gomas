@@ -45,8 +45,8 @@ import (
 /*
  * Compute Givens rotation such that
  *
- *   G(s,c)*v = (r)   ==  ( c  -s ) ( a ) = ( r )
- *              (0)       ( s   c ) ( b )   ( 0 )
+ *   G(s,c)*v = (r)   ==  (  c s ).T ( a ) = ( r )
+ *              (0)       ( -s c )   ( b )   ( 0 )
  *
  * and 
  *

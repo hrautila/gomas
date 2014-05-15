@@ -229,7 +229,7 @@ func buildQRTReflector(T, A, S *cmat.FloatMatrix, nc int, conf *gomas.Config) *g
  *       Block reflector T(n) is LB*LB matrix, expect reflector T(K-1) that is IB*IB matrix
  *       where IB = min(LB, K % LB)
  *
- * W     Workspace, required size returned by WorksizeQRT().
+ * W     Workspace, required size returned by QRTFactorWork().
  *
  * conf  Optional blocking configuration. If not provided then default configuration
  *       is used.
@@ -239,12 +239,12 @@ func buildQRTReflector(T, A, S *cmat.FloatMatrix, nc int, conf *gomas.Config) *g
  *
  * DecomposeQRT is compatible with lapack.DGEQRT
  */
-func DecomposeQRT(A, T, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func QRTFactor(A, T, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf  := gomas.CurrentConf(confs...)
     ok    := false
     rsize := 0
-    wsz   := WorksizeQRT(A, conf)
+    wsz   := QRTFactorWork(A, conf)
     if W == nil || W.Len() < wsz {
         return gomas.NewError(gomas.EWORK, "DecomposeQRT", wsz)
     }
@@ -276,7 +276,7 @@ func DecomposeQRT(A, T, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Erro
  *
  * Returns size of workspace as number of elements.
  */
-func WorksizeQRT(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func QRTFactorWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     sz := n(A)
     if conf.LB > 0 && n(A) > conf.LB {

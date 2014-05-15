@@ -242,7 +242,7 @@ func updateRightLQ(C1, C2, Y1t, Y2t, T, W *cmat.FloatMatrix, transpose bool, con
   *
   * DecomposeLQ is compatible with lapack.DGELQF
   */
-func DecomposeLQ(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func LQFactor(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
 
@@ -271,7 +271,7 @@ func DecomposeLQ(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Err
  *
  * Returns size of workspace as number of elements.
  */
-func WorksizeLQ(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func LQFactorWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsLQ(A, conf.LB)
 }
@@ -366,7 +366,7 @@ func unblkBlockReflectorLQ(T, A, tau *cmat.FloatMatrix) {
  *
  * Compatible with lapack.DLAFRT
  */
-func BuildLQT(T, A, tau *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func LQReflector(T, A, tau *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
 
     if n(T) < m(A) || m(T) < m(A) {
         return gomas.NewError(gomas.ESIZE, "BuildLQT")

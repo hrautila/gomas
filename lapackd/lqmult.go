@@ -407,19 +407,19 @@ func blockedMultLQRight(C, A, tau, W *cmat.FloatMatrix, flags, lb int, conf *gom
  *
  *    Q = H(k)H(k-1)...H(1)
  *
- * as returned by DecomposeLQ().
+ * as returned by LQFactor().
  *
  * Arguments:
  *  C     On entry, the M-by-N matrix C or if flag bit RIGHT is set then
  *        N-by-M matrix.  On exit C is overwritten by Q*C or Q.T*C.
  *        If bit RIGHT is set then C is  overwritten by C*Q or C*Q.T
  *
- *  A     LQ factorization as returne by DecomposeLQ() where the upper
+ *  A     LQ factorization as returned by LQFactor() where the upper
  *        trapezoidal part holds the elementary reflectors.
  *
  *  tau   The scalar factors of the elementary reflectors.
  *
- *  W     Workspace matrix,  required size is returned by WorksizeMultQ().
+ *  W     Workspace matrix,  required size is returned by LQMultWork().
  *
  *  flags Indicators. Valid indicators LEFT, RIGHT, TRANS
  *       
@@ -435,7 +435,7 @@ func blockedMultLQRight(C, A, tau, W *cmat.FloatMatrix, flags, lb int, conf *gom
  *   LEFT : m(C) >= n(Q) --> m(A) <= n(C) <= n(A)
  *   RIGHT: n(C) >= m(Q) --> m(A) <= m(C) <= n(A)
  */
-func MultLQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func LQMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     var wsmin int
     var tauval float64
@@ -496,8 +496,8 @@ func MultLQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
 
 
 /*
- * Solve a system of linear equations A*X = B with general M-by-N
- * matrix A using the QR factorization computed by DecomposeQR().
+ * Solve a system of linear equations A.T*X = B with general M-by-N
+ * matrix A using the QR factorization computed by LQFactor().
  *
  * If flags&TRANS != 0:
  *   find the minimum norm solution of an overdetermined system A.T * X = B.
@@ -513,7 +513,7 @@ func MultLQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
  *  A     The elements on and below the diagonal contain the M-by-min(M,N) lower
  *        trapezoidal matrix L. The elements right of the diagonal with the vector 'tau', 
  *        represent the ortogonal matrix Q as product of elementary reflectors.
- *        Matrix A is as returned by DecomposeLQ()
+ *        Matrix A is as returned by LQFactor()
  *
  *  tau   The vector of N scalar coefficients that together with trilu(A) define
  *        the ortogonal matrix Q as Q = H(N)H(N-1)...H(1)
@@ -527,7 +527,7 @@ func MultLQ(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
  *
  * Compatible with lapack.GELS (the m < n part)
  */
-func SolveLQ(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func LQSolve(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     var L, BL cmat.FloatMatrix
 
@@ -542,7 +542,7 @@ func SolveLQ(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
         // solve: MIN ||A.T*X - B||
 
         // B' = Q.T*B
-        err = MultLQ(B, A, tau, W, gomas.LEFT, conf)
+        err = LQMult(B, A, tau, W, gomas.LEFT, conf)
         if err != nil {
             return err
         }
@@ -565,7 +565,7 @@ func SolveLQ(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
         BL.SetFrom(cmat.NewFloatConstSource(0.0))
         
         // X = Q.T*B'
-        err = MultLQ(B, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
+        err = LQMult(B, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
 
     }
     return err
@@ -576,7 +576,7 @@ func SolveLQ(B, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
  * Calculate workspace size needed to compute C*Q or Q*C with QR decomposition
  * computed with DecomposeQR().
  */
-func WorksizeMultLQ(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz int) {
+func LQMultWork(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz int) {
     conf := gomas.CurrentConf(confs...)
     switch bits & gomas.RIGHT {
     case gomas.RIGHT:
@@ -587,7 +587,7 @@ func WorksizeMultLQ(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz i
     return 
 }
 
-func WorksizeSolveLQ(C *cmat.FloatMatrix, confs... *gomas.Config) int {
+func LQSolveWork(C *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsMultLQLeft(C, conf.LB)
 }

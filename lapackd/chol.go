@@ -165,7 +165,7 @@ func blockedCHOL(A *cmat.FloatMatrix, flags int, conf *gomas.Config) *gomas.Erro
  *
  * Compatible with lapack.DPOTRF
  */
-func DecomposeCHOL(A *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func CHOLFactor(A *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.DefaultConf()
     if len(confs) > 0 {
@@ -205,7 +205,7 @@ func DecomposeCHOL(A *cmat.FloatMatrix, flags int, confs... *gomas.Config) *goma
  *
  * Compatible with lapack.DPOTRS.
  */
-func SolveCHOL(B, A *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func CHOLSolve(B, A *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     // A*X = B; X = A.-1*B == (LU).-1*B == U.-1*L.-1*B == U.-1*(L.-1*B)
     conf := gomas.DefaultConf()
     if len(confs) > 0 {

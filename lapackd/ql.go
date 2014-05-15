@@ -271,7 +271,7 @@ func updateQLRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf 
   *
   * DecomposeQL is compatible with lapack.DGEQLF
   */
-func DecomposeQL(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func QLFactor(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     var tauh cmat.FloatMatrix
     conf := gomas.CurrentConf(confs...)
@@ -314,7 +314,7 @@ func wsQL(A *cmat.FloatMatrix, lb int) int {
  *
  * Returns size of workspace as number of elements.
  */
-func WorksizeQL(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func QLFactorWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsQL(A, conf.LB)
 }
@@ -390,7 +390,7 @@ func unblkQLBlockReflector(T, A, tau *cmat.FloatMatrix) {
     }
 }
 
-func BuildQLT(T, A, tau *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func QLReflector(T, A, tau *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var tauh cmat.FloatMatrix
 
     if n(T) < n(A) || m(T) < n(A) {

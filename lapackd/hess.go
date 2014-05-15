@@ -404,18 +404,18 @@ func blkHessGQvdG(A, Tvec, W *cmat.FloatMatrix, nb int, conf *gomas.Config) *gom
  *
  *  tau  On exit, the scalar factors of the elementary reflectors.
  *
- *  W    Workspace, as defined by WorksizeHess()
+ *  W    Workspace, as defined by HessReduceWork()
  *
  *  conf The blocking configration. 
  * 
- * ReduceHess is compatible with lapack.DGEHRD.
+ * HessReduce is compatible with lapack.DGEHRD.
  */
-func ReduceHess(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func HessReduce(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
 
     wmin := m(A)
-    wopt := WorksizeHess(A, conf)
+    wopt := HessReduceWork(A, conf)
     wsz  := W.Len()
     if wsz < wmin {
         return gomas.NewError(gomas.EWORK, "ReduceHess", wmin)
@@ -470,7 +470,7 @@ func ReduceHess(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Erro
  *        TRANS|RIGHT  C = C*Q.T   n(C) == m(A)
  *
  */
-func MultQHess(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func HessMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var Qh, Ch, tauh cmat.FloatMatrix
 
     Qh.SubMatrix(A, 1, 0, m(A)-1, n(A)-1)
@@ -480,7 +480,7 @@ func MultQHess(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config
     } else {
         Ch.SubMatrix(C, 1, 0, m(C)-1, n(C))
     }
-    err := MultQ(&Ch, &Qh, &tauh, W, flags, confs...)
+    err := QRMult(&Ch, &Qh, &tauh, W, flags, confs...)
     if err != nil {
         err.Update("MultQHess")
     }
@@ -499,13 +499,13 @@ func wsHess(A *cmat.FloatMatrix, lb int) int {
  * Compute worksize needed for Hessenberg reduction of matrix A with
  * a blocking configuration.
  */
-func WorksizeHess(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func HessReduceWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsHess(A, conf.LB)
 }
 
-func WorksizeMultQHess(A *cmat.FloatMatrix, flags int, confs... *gomas.Config) int {
-    return WorksizeMultQ(A, flags, confs...)
+func HessMultWork(A *cmat.FloatMatrix, flags int, confs... *gomas.Config) int {
+    return QRMultWork(A, flags, confs...)
 }
 
 // Local Variables:

@@ -377,7 +377,7 @@ func blkMultRightQL(C, A, tau, W *cmat.FloatMatrix, flags, lb int, conf *gomas.C
  *
  * Compatible with lapack.DORMQL
  */
-func MultQL(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func QLMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
 
@@ -421,7 +421,7 @@ func MultQL(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
 }
 
 
-func WorksizeMultQL(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz int) {
+func QLMultWork(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz int) {
     conf := gomas.CurrentConf(confs...)
     switch bits & gomas.RIGHT {
     case gomas.RIGHT:
@@ -432,7 +432,7 @@ func WorksizeMultQL(C *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz i
     return 
 }
 
-func WorksizeSolveQL(C *cmat.FloatMatrix, confs... *gomas.Config) int {
+func QLSolveWork(C *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsMultLeftQL(C, conf.LB)
 }

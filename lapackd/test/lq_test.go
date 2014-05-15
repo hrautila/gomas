@@ -15,7 +15,7 @@ import (
     "testing"
 )
 
-func TestDecompLQ(t *testing.T) {
+func TestLQFactor(t *testing.T) {
     M := 611
     N := 715
     nb := 32
@@ -31,11 +31,11 @@ func TestDecompLQ(t *testing.T) {
 
     conf.LB = 0
     W := cmat.NewMatrix(M+N, 1)
-    lapackd.DecomposeLQ(A, tau, W, conf)
+    lapackd.LQFactor(A, tau, W, conf)
 
     conf.LB = nb
-    W1 := lapackd.Workspace(lapackd.WorksizeLQ(A1, conf))
-    lapackd.DecomposeLQ(A1, tau1, W1, conf)
+    W1 := lapackd.Workspace(lapackd.LQFactorWork(A1, conf))
+    lapackd.LQFactor(A1, tau1, W1, conf)
     
     blasd.Plus(A1, A, 1.0, -1.0, gomas.NONE)
     nrm := lapackd.NormP(A1, lapackd.NORM_ONE)
@@ -44,7 +44,7 @@ func TestDecompLQ(t *testing.T) {
 
 
 // test: ||A - A*Q*Q.T||_1 ~= 0
-func TestMultLQRight(t *testing.T) {
+func TestLQMultRight(t *testing.T) {
     M := 511
     N := 627
     nb := 24
@@ -61,18 +61,18 @@ func TestMultLQRight(t *testing.T) {
     A2 := cmat.NewCopy(A)
 
     conf.LB = 0
-    lapackd.DecomposeLQ(A, tau, W, conf)
+    lapackd.LQFactor(A, tau, W, conf)
 
     // unblocked A1 := A1*Q*Q.T
     conf.LB = 0
-    lapackd.MultLQ(A1, A, tau, W, gomas.RIGHT, conf)
-    lapackd.MultLQ(A1, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.LQMult(A1, A, tau, W, gomas.RIGHT, conf)
+    lapackd.LQMult(A1, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
 
     // blocked A2 := A2*Q*Q.T
     conf.LB = nb
-    W = lapackd.Workspace(lapackd.WorksizeMultLQ(A2, gomas.RIGHT, conf))
-    lapackd.MultLQ(A2, A, tau, W, gomas.RIGHT, conf)
-    lapackd.MultLQ(A2, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    W = lapackd.Workspace(lapackd.LQMultWork(A2, gomas.RIGHT, conf))
+    lapackd.LQMult(A2, A, tau, W, gomas.RIGHT, conf)
+    lapackd.LQMult(A2, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
 
     // A1 - A0 == 0
     blasd.Plus(A1, A0, 1.0, -1.0, gomas.NONE)
@@ -87,7 +87,7 @@ func TestMultLQRight(t *testing.T) {
 
 // test: ||C - Q*Q.T*C||_1 ~= 0;
 //   multipling from left requires: m(C) == n(A) [n(Q)]
-func TestMultLQLeft(t *testing.T) {
+func TestLQMultLeft(t *testing.T) {
     M := 771
     N := 813
     nb := 16
@@ -106,18 +106,18 @@ func TestMultLQLeft(t *testing.T) {
     W := cmat.NewMatrix(M+N, 1)
 
     conf.LB = 0
-    lapackd.DecomposeLQ(A, tau, W, conf)
+    lapackd.LQFactor(A, tau, W, conf)
 
     // A0 := Q.T*A0
     conf.LB = 0
-    lapackd.MultLQ(C2t, A, tau, W, gomas.LEFT, conf)
-    lapackd.MultLQ(C2t, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
+    lapackd.LQMult(C2t, A, tau, W, gomas.LEFT, conf)
+    lapackd.LQMult(C2t, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
 
     // A0 := Q.T*A0
     conf.LB = nb
-    W1 := lapackd.Workspace(lapackd.WorksizeMultLQ(C1t, gomas.LEFT, conf))
-    lapackd.MultLQ(C1t, A, tau, W1, gomas.LEFT, conf)
-    lapackd.MultLQ(C1t, A, tau, W1, gomas.LEFT|gomas.TRANS, conf)
+    W1 := lapackd.Workspace(lapackd.LQMultWork(C1t, gomas.LEFT, conf))
+    lapackd.LQMult(C1t, A, tau, W1, gomas.LEFT, conf)
+    lapackd.LQMult(C1t, A, tau, W1, gomas.LEFT|gomas.TRANS, conf)
 
     blasd.Plus(C0, C1t, 1.0, -1.0, gomas.TRANSB)
     nrm := lapackd.NormP(C0, lapackd.NORM_ONE)
@@ -128,7 +128,7 @@ func TestMultLQLeft(t *testing.T) {
     t.Logf("M=%d, N=%d, ||unblk(Q*Q.T*C) - blk(Q*Q*T*C)||_1: %e\n", M, N, nrm)
 }
 
-func TestBuildLQ(t *testing.T) {
+func TestLQBuild(t *testing.T) {
     var dc cmat.FloatMatrix
 
     M := 877
@@ -147,23 +147,23 @@ func TestBuildLQ(t *testing.T) {
     dc.Diag(C)
 
     conf.LB = lb
-    lapackd.DecomposeLQ(A, tau, W, conf)
+    lapackd.LQFactor(A, tau, W, conf)
     A1 := cmat.NewCopy(A)
 
     conf.LB = 0
-    lapackd.BuildLQ(A, tau, W, K, conf)
+    lapackd.LQBuild(A, tau, W, K, conf)
     if N < 10 {
-        t.Logf("unblk.BuildLQ Q:\n%v\n", A)
+        t.Logf("unblk.LQBuild Q:\n%v\n", A)
     }
     blasd.Mult(C, A, A, 1.0, 0.0, gomas.TRANSB, conf)
     blasd.Add(&dc, -1.0)
     n0 := lapackd.NormP(C, lapackd.NORM_ONE)
 
     conf.LB = lb
-    W2 := lapackd.Workspace(lapackd.WorksizeBuildLQ(A, conf))
-    lapackd.BuildLQ(A1, tau, W2, K, conf)
+    W2 := lapackd.Workspace(lapackd.LQBuildWork(A, conf))
+    lapackd.LQBuild(A1, tau, W2, K, conf)
     if N < 10 {
-        t.Logf("blk.BuildLQ Q:\n%v\n", A1)
+        t.Logf("blk.LQBuild Q:\n%v\n", A1)
     }
     blasd.Mult(C, A1, A1, 1.0, 0.0, gomas.TRANSB, conf)
     blasd.Add(&dc, -1.0)
@@ -172,7 +172,7 @@ func TestBuildLQ(t *testing.T) {
     blasd.Plus(A, A1, 1.0, -1.0, gomas.NONE)
     n2 := lapackd.NormP(A, lapackd.NORM_ONE)
 
-    t.Logf("M=%d, N=%d, K=%d ||unblk.BuildLQ(A) - blk.BuildLQ(A)||_1 :%e\n", M, N, K, n2)
+    t.Logf("M=%d, N=%d, K=%d ||unblk.LQBuild(A) - blk.LQBuild(A)||_1 :%e\n", M, N, K, n2)
     t.Logf("unblk M=%d, N=%d, K=%d ||I - Q*Q.T||_1 : %e\n", M, N, K, n0)
     t.Logf("  blk M=%d, N=%d, K=%d ||I - Q*Q.T||_1 : %e\n", M, N, K, n1)
 }

@@ -99,7 +99,7 @@ func blkBuildLQ(A, Tvec, Twork, W *cmat.FloatMatrix, K, lb int, conf *gomas.Conf
         &tT,
         &tB,  Tvec, mk+uk, util.PBOTTOM)
 
-    // zero the bottom part
+    // zero the bottom part __CHECK HERE: nk? or mk?
     if nk+uk > 0 {
         blasd.Scale(&ABL, 0.0)
         if uk > 0 {
@@ -170,7 +170,7 @@ func blkBuildLQ(A, Tvec, Twork, W *cmat.FloatMatrix, K, lb int, conf *gomas.Conf
  *
  * Compatible with lapackd.ORGLQ.
  */
-func BuildLQ(A, tau, W *cmat.FloatMatrix, K int, confs... *gomas.Config) *gomas.Error {
+func LQBuild(A, tau, W *cmat.FloatMatrix, K int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
     if K <= 0 || K > n(A) {
@@ -203,7 +203,7 @@ func wsBuildLQ(A *cmat.FloatMatrix, lb int) int {
     return m(A)
 }
 
-func WorksizeBuildLQ(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func LQBuildWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsBuildLQ(A, conf.LB)
 }

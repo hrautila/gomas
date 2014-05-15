@@ -32,13 +32,13 @@ func TestTriRedLower(t *testing.T) {
     W := lapackd.Workspace(N)
     W1 := lapackd.Workspace(N*nb)
 
-    e := lapackd.ReduceTridiag(A, tau, W, gomas.LOWER, conf)
+    e := lapackd.TRDReduce(A, tau, W, gomas.LOWER, conf)
     if e != nil {
         t.Logf("unblk.e: %v\n", e)
     }
 
     conf.LB = nb
-    e = lapackd.ReduceTridiag(A1, tau1, W1, gomas.LOWER, conf)
+    e = lapackd.TRDReduce(A1, tau1, W1, gomas.LOWER, conf)
     if e != nil {
         t.Logf("blk.e: %v\n", e)
     }
@@ -69,10 +69,10 @@ func TestTriRedUpper(t *testing.T) {
     W := lapackd.Workspace(N)
     W1 := lapackd.Workspace(N*nb)
 
-    lapackd.ReduceTridiag(A, tau, W, gomas.UPPER, conf)
+    lapackd.TRDReduce(A, tau, W, gomas.UPPER, conf)
 
     conf.LB = nb
-    lapackd.ReduceTridiag(A1, tau1, W1, gomas.UPPER, conf)
+    lapackd.TRDReduce(A1, tau1, W1, gomas.UPPER, conf)
 
     blasd.Plus(A, A1, -1.0, 1.0, gomas.NONE)
     nrm := lapackd.NormP(A, lapackd.NORM_ONE)

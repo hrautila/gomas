@@ -35,9 +35,9 @@ func TestLUnoPivoting(t *testing.T) {
     conf.LB = nb
 
 	// R = lu(A) = P*L*U
-	lapackd.DecomposeLUnoPiv(A, conf)
+	lapackd.LUFactor(A, nil, conf)
 	// X = A.-1*B = U.-1*(L.-1*B)
-	lapackd.SolveLU(X, A, nil, gomas.NONE)
+	lapackd.LUSolve(X, A, nil, gomas.NONE)
 	// B = B - A*X
 	blasd.Mult(B, A0, X, -1.0, 1.0, gomas.NONE)
     nrm := lapackd.NormP(B, lapackd.NORM_ONE)
@@ -50,9 +50,9 @@ func TestLUnoPivoting(t *testing.T) {
     conf.LB = 16
 
 	// R = lu(A) = P*L*U
-	lapackd.DecomposeLUnoPiv(A, conf)
+	lapackd.LUFactor(A, nil, conf)
 	// X = A.-1*B = U.-1*(L.-1*B)
-	lapackd.SolveLU(X, A, nil, gomas.NONE)
+	lapackd.LUSolve(X, A, nil, gomas.NONE)
 	// B = B - A*X
 	blasd.Mult(B, A0, X, -1.0, 1.0, gomas.NONE)
     nrm = lapackd.NormP(B, lapackd.NORM_ONE)
@@ -81,9 +81,9 @@ func TestLU(t *testing.T) {
     conf.LB = nb
 
 	// R = lu(A) = P*L*U
-	lapackd.DecomposeLU(A, piv, conf)
+	lapackd.LUFactor(A, piv, conf)
 	// X = A.-1*B = U.-1*(L.-1*B)
-	lapackd.SolveLU(X, A, piv, gomas.NONE)
+	lapackd.LUSolve(X, A, piv, gomas.NONE)
 	// B = B - A*X
 	blasd.Mult(B, A0, X, -1.0, 1.0, gomas.NONE)
     nrm := lapackd.NormP(B, lapackd.NORM_ONE)
@@ -97,9 +97,9 @@ func TestLU(t *testing.T) {
     B.SetFrom(unitrand)
     X.Copy(B)
 	// lu(A) = P*L*U
-	lapackd.DecomposeLU(A, piv, conf)
+	lapackd.LUFactor(A, piv, conf)
 	// X = A.-1*B = U.-1*(L.-1*B)
-	lapackd.SolveLU(X, A, piv, gomas.NONE)
+	lapackd.LUSolve(X, A, piv, gomas.NONE)
 	// B = B - A*X
 	blasd.Mult(B, A0, X, -1.0, 1.0, gomas.NONE)
     nrm = lapackd.NormP(B, lapackd.NORM_ONE)

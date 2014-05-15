@@ -52,16 +52,16 @@ func TestBKLowerBig(t *testing.T) {
     conf.LB = 0
 
     // unblocked
-    W := lapackd.Workspace(lapackd.WorksizeBK(A, conf))
-    err := lapackd.DecomposeBK(A, W, ipiv, gomas.LOWER, conf)
+    W := lapackd.Workspace(lapackd.BKFactorWork(A, conf))
+    err := lapackd.BKFactor(A, W, ipiv, gomas.LOWER, conf)
     if err != nil {
         t.Logf("unblk.err: %v\n", err)
     }
 
     // blocked
     conf.LB = 8
-    W = lapackd.Workspace(lapackd.WorksizeBK(A0, conf))
-    err = lapackd.DecomposeBK(A0, W, ipiv0, gomas.LOWER, conf)
+    W = lapackd.Workspace(lapackd.BKFactorWork(A0, conf))
+    err = lapackd.BKFactor(A0, W, ipiv0, gomas.LOWER, conf)
     if err != nil {
         t.Logf("blk.err: %v\n", err)
     }
@@ -92,12 +92,12 @@ func TestSolveBKLowerBig(t *testing.T) {
 
     conf := gomas.NewConf()
     conf.LB = 16
-    W := lapackd.Workspace(lapackd.WorksizeBK(A, conf))
-    lapackd.DecomposeBK(A, W, ipiv, gomas.LOWER, conf)
+    W := lapackd.Workspace(lapackd.BKFactorWork(A, conf))
+    lapackd.BKFactor(A, W, ipiv, gomas.LOWER, conf)
 
-    lapackd.SolveBK(B, A, ipiv, gomas.LOWER, conf)
+    lapackd.BKSolve(B, A, ipiv, gomas.LOWER, conf)
     ok := B.AllClose(X)
-    t.Logf("N=%d unblk.SolveBK.X == A.-1*B : %v\n", N, ok)
+    t.Logf("N=%d unblk.BK(X) == A.-1*B : %v\n", N, ok)
     blasd.Plus(B, X, 1.0, -1.0, gomas.NONE)
     nrm := lapackd.NormP(B, lapackd.NORM_ONE)
     t.Logf("  ||X - A.-1*B||_1: %.4e\n", nrm)
@@ -118,16 +118,16 @@ func TestBKUpperBig(t *testing.T) {
     conf.LB = 0
 
     // unblocked
-    W := lapackd.Workspace(lapackd.WorksizeBK(A, conf))
-    err := lapackd.DecomposeBK(A, W, ipiv, gomas.UPPER, conf)
+    W := lapackd.Workspace(lapackd.BKFactorWork(A, conf))
+    err := lapackd.BKFactor(A, W, ipiv, gomas.UPPER, conf)
     if err != nil {
         t.Logf("unblk.err: %v\n", err)
     }
 
     // blocked
     conf.LB = 16
-    W = lapackd.Workspace(lapackd.WorksizeBK(A0, conf))
-    err = lapackd.DecomposeBK(A0, W, ipiv0, gomas.UPPER, conf)
+    W = lapackd.Workspace(lapackd.BKFactorWork(A0, conf))
+    err = lapackd.BKFactor(A0, W, ipiv0, gomas.UPPER, conf)
     if err != nil {
         t.Logf("blk.err: %v\n", err)
     }
@@ -158,12 +158,12 @@ func TestSolveBKUpperBig(t *testing.T) {
 
     conf := gomas.NewConf()
     conf.LB = 16
-    W := lapackd.Workspace(lapackd.WorksizeBK(A, conf))
-    lapackd.DecomposeBK(A, W, ipiv, gomas.UPPER, conf)
+    W := lapackd.Workspace(lapackd.BKFactorWork(A, conf))
+    lapackd.BKFactor(A, W, ipiv, gomas.UPPER, conf)
 
-    lapackd.SolveBK(B, A, ipiv, gomas.UPPER, conf)
+    lapackd.BKSolve(B, A, ipiv, gomas.UPPER, conf)
     ok := B.AllClose(X)
-    t.Logf("N=%d unblk.SolveBK.X == A.-1*B : %v\n", N, ok)
+    t.Logf("N=%d unblk.BKSolve.X == A.-1*B : %v\n", N, ok)
     blasd.Plus(B, X, 1.0, -1.0, gomas.NONE)
     nrm := lapackd.NormP(B, lapackd.NORM_ONE)
     t.Logf("  ||X - A.-1*B||_1: %.4e\n", nrm)

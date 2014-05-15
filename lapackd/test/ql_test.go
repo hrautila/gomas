@@ -16,8 +16,8 @@ import (
 )
 
 
-// test: unblk.DecomposeQL == blk.DecomposeQL
-func TestDecomposeQL(t *testing.T) {
+// test: unblk.QLFactor == blk.QLFactor
+func TestQLFactor(t *testing.T) {
     var t0 cmat.FloatMatrix
     M := 911
     N := 835
@@ -34,11 +34,11 @@ func TestDecomposeQL(t *testing.T) {
     tau1 := cmat.NewCopy(tau)
 
     conf.LB = 0
-    lapackd.DecomposeQL(A, tau, W, conf)
+    lapackd.QLFactor(A, tau, W, conf)
 
     conf.LB = nb
-    W1 := lapackd.Workspace(lapackd.WorksizeQL(A1, conf))
-    lapackd.DecomposeQL(A1, tau1, W1, conf)
+    W1 := lapackd.Workspace(lapackd.QLFactorWork(A1, conf))
+    lapackd.QLFactor(A1, tau1, W1, conf)
 
     if N < 10 {
         t.Logf("unblkQL(A):\n%v\n", A)
@@ -59,7 +59,7 @@ func TestDecomposeQL(t *testing.T) {
 
 }
 
-func TestMultQLLeft(t *testing.T) {
+func TestQLMultLeft(t *testing.T) {
     var d, di0, di1 cmat.FloatMatrix
     M := 901
     N := 887
@@ -85,16 +85,16 @@ func TestMultQLLeft(t *testing.T) {
     W := cmat.NewMatrix(lb*(M+N), 1)
 
     conf.LB = lb
-    lapackd.DecomposeQL(A, tau, W, conf)
+    lapackd.QLFactor(A, tau, W, conf)
 
-    lapackd.MultQL(C0, A, tau, W, gomas.LEFT, conf)
+    lapackd.QLMult(C0, A, tau, W, gomas.LEFT, conf)
     // I = Q*Q.T - I
     blasd.Mult(I0, C0, C0, 1.0, 0.0, gomas.TRANSA, conf)
     blasd.Add(&di0, -1.0)
     n0 := lapackd.NormP(I0, lapackd.NORM_ONE)
     
     conf.LB = lb
-    lapackd.MultQL(C1, A, tau, W, gomas.LEFT, conf)
+    lapackd.QLMult(C1, A, tau, W, gomas.LEFT, conf)
     // I = Q*Q.T - I
     blasd.Mult(I1, C1, C1, 1.0, 0.0, gomas.TRANSA, conf)
     blasd.Add(&di1, -1.0)
@@ -107,12 +107,12 @@ func TestMultQLLeft(t *testing.T) {
     blasd.Plus(C0, C1, 1.0, -1.0, gomas.NONE)
     n2 := lapackd.NormP(C0, lapackd.NORM_ONE)
 
-    t.Logf("M=%d, N=%d ||unblk.MultQL(C) - blk.MultQL(C)||_1: %e\n", M, N, n2)
+    t.Logf("M=%d, N=%d ||unblk.QLMult(C) - blk.QLMult(C)||_1: %e\n", M, N, n2)
     t.Logf("unblk M=%d, N=%d ||I - Q.T*Q||_1: %e\n", M, N, n0)
     t.Logf("blk   M=%d, N=%d ||I - Q.T*Q||_1: %e\n", M, N, n1)
 }
 
-func TestMultQLLeftTrans(t *testing.T) {
+func TestQLMultLeftTrans(t *testing.T) {
     var d, di0, di1 cmat.FloatMatrix
     M := 901
     N := 887
@@ -138,16 +138,16 @@ func TestMultQLLeftTrans(t *testing.T) {
     W := cmat.NewMatrix(lb*(M+N), 1)
 
     conf.LB = lb
-    lapackd.DecomposeQL(A, tau, W, conf)
+    lapackd.QLFactor(A, tau, W, conf)
 
-    lapackd.MultQL(C0, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
+    lapackd.QLMult(C0, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
     // I = Q*Q.T - I
     blasd.Mult(I0, C0, C0, 1.0, 0.0, gomas.TRANSA, conf)
     blasd.Add(&di0, -1.0)
     n0 := lapackd.NormP(I0, lapackd.NORM_ONE)
     
     conf.LB = lb
-    lapackd.MultQL(C1, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
+    lapackd.QLMult(C1, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
     // I = Q*Q.T - I
     blasd.Mult(I1, C1, C1, 1.0, 0.0, gomas.TRANSA, conf)
     blasd.Add(&di1, -1.0)
@@ -160,13 +160,13 @@ func TestMultQLLeftTrans(t *testing.T) {
     blasd.Plus(C0, C1, 1.0, -1.0, gomas.NONE)
     n2 := lapackd.NormP(C0, lapackd.NORM_ONE)
 
-    t.Logf("M=%d, N=%d ||unblk.MultQL(C) - blk.MultQL(C)||_1: %e\n", M, N, n2)
+    t.Logf("M=%d, N=%d ||unblk.QLMult(C) - blk.QLMult(C)||_1: %e\n", M, N, n2)
     t.Logf("unblk M=%d, N=%d ||I - Q*Q.T||_1: %e\n", M, N, n0)
     t.Logf("blk   M=%d, N=%d ||I - Q*Q.T||_1: %e\n", M, N, n1)
 }
 
 
-func TestMultQLRight(t *testing.T) {
+func TestQLMultRight(t *testing.T) {
     var d, di0, di1 cmat.FloatMatrix
     M := 891
     N := 853
@@ -192,17 +192,17 @@ func TestMultQLRight(t *testing.T) {
     W := cmat.NewMatrix(lb*(M+N), 1)
 
     conf.LB = lb
-    lapackd.DecomposeQL(A, tau, W, conf)
+    lapackd.QLFactor(A, tau, W, conf)
 
     conf.LB = 0
-    lapackd.MultQL(C0, A, tau, W, gomas.RIGHT, conf)
+    lapackd.QLMult(C0, A, tau, W, gomas.RIGHT, conf)
     // I = Q*Q.T - I
     blasd.Mult(I0, C0, C0, 1.0, 0.0, gomas.TRANSB, conf)
     blasd.Add(&di0, -1.0)
     n0 := lapackd.NormP(I0, lapackd.NORM_ONE)
     
     conf.LB = lb
-    lapackd.MultQL(C1, A, tau, W, gomas.RIGHT, conf)
+    lapackd.QLMult(C1, A, tau, W, gomas.RIGHT, conf)
     // I = Q*Q.T - I
     blasd.Mult(I1, C1, C1, 1.0, 0.0, gomas.TRANSB, conf)
     blasd.Add(&di1, -1.0)
@@ -215,13 +215,13 @@ func TestMultQLRight(t *testing.T) {
     blasd.Plus(C0, C1, 1.0, -1.0, gomas.NONE)
     n2 := lapackd.NormP(C0, lapackd.NORM_ONE)
 
-    t.Logf("M=%d, N=%d ||unblk.MultQL(C) - blk.MultQL(C)||_1: %e\n", M, N, n2)
+    t.Logf("M=%d, N=%d ||unblk.QLMult(C) - blk.QLMult(C)||_1: %e\n", M, N, n2)
     t.Logf("unblk M=%d, N=%d ||I - Q*Q.T||_1: %e\n", M, N, n0)
     t.Logf("blk   M=%d, N=%d ||I - Q*Q.T||_1: %e\n", M, N, n1)
 }
 
 // test: C = C*Q.T 
-func TestMultQLRightTrans(t *testing.T) {
+func TestQLMultRightTrans(t *testing.T) {
     var d, di0, di1 cmat.FloatMatrix
     M := 891
     N := 853
@@ -247,17 +247,17 @@ func TestMultQLRightTrans(t *testing.T) {
     W := cmat.NewMatrix(lb*(M+N), 1)
 
     conf.LB = lb
-    lapackd.DecomposeQL(A, tau, W, conf)
+    lapackd.QLFactor(A, tau, W, conf)
 
     conf.LB = 0
-    lapackd.MultQL(C0, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.QLMult(C0, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
     // I = Q*Q.T - I
     blasd.Mult(I0, C0, C0, 1.0, 0.0, gomas.TRANSB, conf)
     blasd.Add(&di0, -1.0)
     n0 := lapackd.NormP(I0, lapackd.NORM_ONE)
     
     conf.LB = lb
-    lapackd.MultQL(C1, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.QLMult(C1, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
     // I = Q*Q.T - I
     blasd.Mult(I1, C1, C1, 1.0, 0.0, gomas.TRANSB, conf)
     blasd.Add(&di1, -1.0)
@@ -270,13 +270,13 @@ func TestMultQLRightTrans(t *testing.T) {
     blasd.Plus(C0, C1, 1.0, -1.0, gomas.NONE)
     n2 := lapackd.NormP(C0, lapackd.NORM_ONE)
 
-    t.Logf("M=%d, N=%d ||unblk.MultQL(C) - blk.MultQL(C)||_1: %e\n", M, N, n2)
+    t.Logf("M=%d, N=%d ||unblk.QLMult(C) - blk.QLMult(C)||_1: %e\n", M, N, n2)
     t.Logf("unblk M=%d, N=%d ||I - Q*Q.T||_1: %e\n", M, N, n0)
     t.Logf("blk   M=%d, N=%d ||I - Q*Q.T||_1: %e\n", M, N, n1)
 }
 
 
-func TestBuildQL(t *testing.T) {
+func TestQLBuild(t *testing.T) {
     var dc cmat.FloatMatrix
     M := 711
     N := 707
@@ -293,25 +293,25 @@ func TestBuildQL(t *testing.T) {
     C := cmat.NewMatrix(N, N)
 
     conf.LB = lb
-    lapackd.DecomposeQL(A, tau, W, conf)
+    lapackd.QLFactor(A, tau, W, conf)
     A1 := cmat.NewCopy(A)
 
     conf.LB = 0
-    lapackd.BuildQL(A, tau, W, K, conf)
+    lapackd.QLBuild(A, tau, W, K, conf)
     blasd.Mult(C, A, A, 1.0, 0.0, gomas.TRANSA, conf)
     dc.Diag(C)
     blasd.Add(&dc, -1.0)
     if N < 10 {
-        t.Logf("unblk.BuildQL Q:\n%v\n", A)
-        t.Logf("unblk.BuildQL Q.T*Q:\n%v\n", C)
+        t.Logf("unblk.QLBuild Q:\n%v\n", A)
+        t.Logf("unblk.QLBuild Q.T*Q:\n%v\n", C)
     }
     n0 := lapackd.NormP(C, lapackd.NORM_ONE)
 
     conf.LB = lb
-    W1 := lapackd.Workspace(lapackd.WorksizeBuildQL(A1, conf))
-    lapackd.BuildQL(A1, tau, W1, K, conf)
+    W1 := lapackd.Workspace(lapackd.QLBuildWork(A1, conf))
+    lapackd.QLBuild(A1, tau, W1, K, conf)
     if N < 10 {
-        t.Logf("blk.BuildQL Q:\n%v\n", A1)
+        t.Logf("blk.QLBuild Q:\n%v\n", A1)
     }
     // compute: I - Q.T*Q
     blasd.Mult(C, A1, A1, 1.0, 0.0, gomas.TRANSA, conf)
@@ -321,13 +321,13 @@ func TestBuildQL(t *testing.T) {
     blasd.Plus(A, A1, 1.0, -1.0, gomas.NONE)
     n2 := lapackd.NormP(A, lapackd.NORM_ONE)
 
-    t.Logf("M=%d, N=%d, K=N ||unblk.BuildQL(A) - blk.BuildQL(A)||_1 :%e\n", M, N, n2)
+    t.Logf("M=%d, N=%d, K=N ||unblk.QLBuild(A) - blk.QLBuild(A)||_1 :%e\n", M, N, n2)
     t.Logf("  unblk M=%d, N=%d, K=N ||Q.T*Q - I||_1 : %e\n", M, N, n0)
     t.Logf("  blk   M=%d, N=%d, K=N ||Q.T*Q - I||_1 : %e\n", M, N, n1)
 }
 
 
-func TestBuildQLwithK(t *testing.T) {
+func TestQLBuildwithK(t *testing.T) {
     var dc cmat.FloatMatrix
     M := 711
     N := 707
@@ -344,25 +344,25 @@ func TestBuildQLwithK(t *testing.T) {
     C := cmat.NewMatrix(N, N)
 
     conf.LB = lb
-    lapackd.DecomposeQL(A, tau, W, conf)
+    lapackd.QLFactor(A, tau, W, conf)
     A1 := cmat.NewCopy(A)
 
     conf.LB = 0
-    lapackd.BuildQL(A, tau, W, K, conf)
+    lapackd.QLBuild(A, tau, W, K, conf)
     blasd.Mult(C, A, A, 1.0, 0.0, gomas.TRANSA, conf)
     dc.Diag(C)
     blasd.Add(&dc, -1.0)
     if N < 10 {
-        t.Logf("unblk.BuildQL Q:\n%v\n", A)
-        t.Logf("unblk.BuildQL Q.T*Q:\n%v\n", C)
+        t.Logf("unblk.QLBuild Q:\n%v\n", A)
+        t.Logf("unblk.QLBuild Q.T*Q:\n%v\n", C)
     }
     n0 := lapackd.NormP(C, lapackd.NORM_ONE)
 
     conf.LB = lb
-    W1 := lapackd.Workspace(lapackd.WorksizeBuildQL(A1, conf))
-    lapackd.BuildQL(A1, tau, W1, K, conf)
+    W1 := lapackd.Workspace(lapackd.QLBuildWork(A1, conf))
+    lapackd.QLBuild(A1, tau, W1, K, conf)
     if N < 10 {
-        t.Logf("blk.BuildQL Q:\n%v\n", A1)
+        t.Logf("blk.QLBuild Q:\n%v\n", A1)
     }
     // compute: I - Q.T*Q
     blasd.Mult(C, A1, A1, 1.0, 0.0, gomas.TRANSA, conf)
@@ -372,7 +372,7 @@ func TestBuildQLwithK(t *testing.T) {
     blasd.Plus(A, A1, 1.0, -1.0, gomas.NONE)
     n2 := lapackd.NormP(A, lapackd.NORM_ONE)
 
-    t.Logf("M=%d, N=%d, K=%d ||unblk.BuildQL(A) - blk.BuildQL(A)||_1 :%e\n", M, N, K, n2)
+    t.Logf("M=%d, N=%d, K=%d ||unblk.QLBuild(A) - blk.QLBuild(A)||_1 :%e\n", M, N, K, n2)
     t.Logf("unblk M=%d, N=%d, K=%d ||Q.T*Q - I||_1 : %e\n", M, N, K, n0)
     t.Logf("blk   M=%d, N=%d, K=%d ||Q.T*Q - I||_1 : %e\n", M, N, K, n1)
 }

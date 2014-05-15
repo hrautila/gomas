@@ -33,11 +33,11 @@ func TestDecomposeQRT(t *testing.T) {
     T0 := cmat.NewMatrix(N, N)
 
     // blocked: QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQRT(A, conf))
-    lapackd.DecomposeQRT(A, T, W, conf)
+    W := lapackd.Workspace(lapackd.QRTFactorWork(A, conf))
+    lapackd.QRTFactor(A, T, W, conf)
 
     conf.LB = 0
-    lapackd.DecomposeQRT(A0, T0, W, conf)
+    lapackd.QRTFactor(A0, T0, W, conf)
 
     ok := A.AllClose(A0)
     t.Logf("blk.DecomposeQRT(A) == unblk.DecomposeQRT(A): %v\n", ok)
@@ -62,8 +62,8 @@ func TestMultQTLeft(t *testing.T) {
     //t.Logf("A0:\n%v\n", A0)
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQRT(A, conf))
-    lapackd.DecomposeQRT(A, T, W, conf)
+    W := lapackd.Workspace(lapackd.QRTFactorWork(A, conf))
+    lapackd.QRTFactor(A, T, W, conf)
     //t.Logf("T:\n%v\n", T)
 
     // C = TriU(QR) = R
@@ -71,8 +71,8 @@ func TestMultQTLeft(t *testing.T) {
     //t.Logf("R:\n%v\n", C)
 
     // C = Q*C
-    W = lapackd.Workspace(lapackd.WorksizeMultQT(C, T, gomas.LEFT, conf))
-    err := lapackd.MultQT(C, A, T, W, gomas.LEFT, conf)
+    W = lapackd.Workspace(lapackd.QRTMultWork(C, T, gomas.LEFT, conf))
+    err := lapackd.QRTMult(C, A, T, W, gomas.LEFT, conf)
     if err != nil {
         t.Logf("err: %v\n", err)
     }
@@ -85,7 +85,7 @@ func TestMultQTLeft(t *testing.T) {
 }
 
 // this is A = Q*R --> A.T == R.T*Q.T  --> ||A - (R.T*Q.T).T||_1
-func TestMultQTRight(t *testing.T) {
+func TestQRTMultRight(t *testing.T) {
     M := 511
 	N := 493
     nb := 16
@@ -101,16 +101,16 @@ func TestMultQTRight(t *testing.T) {
     conf.LB = nb
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQRT(A, conf))
-    lapackd.DecomposeQRT(A, T, W, conf)
+    W := lapackd.Workspace(lapackd.QRTFactorWork(A, conf))
+    lapackd.QRTFactor(A, T, W, conf)
 
     // A.T = R.T*Q.T 
     // C =  transpose(TriU(QR)) = R.T
     C.Transpose(cmat.TriU(cmat.NewCopy(A), cmat.NONE))
 
     // A.T = C*Q.T = R.T*Q.T
-    W = lapackd.Workspace(lapackd.WorksizeMultQT(C, T, gomas.RIGHT, conf))
-    err := lapackd.MultQT(C, A, T, W, gomas.RIGHT|gomas.TRANS, conf)
+    W = lapackd.Workspace(lapackd.QRTMultWork(C, T, gomas.RIGHT, conf))
+    err := lapackd.QRTMult(C, A, T, W, gomas.RIGHT|gomas.TRANS, conf)
     if err != nil {
         t.Logf("err: %v\n", err)
     }
@@ -123,7 +123,7 @@ func TestMultQTRight(t *testing.T) {
 }
 
 // m > n: A[m,n], I[m,m] --> A == I*A == Q*Q.T*A
-func TestMultQTLeftIdent(t *testing.T) {
+func TestQRTMultLeftIdent(t *testing.T) {
     M := 411
 	N := 399
     nb := 16
@@ -139,16 +139,16 @@ func TestMultQTLeftIdent(t *testing.T) {
     //t.Logf("A0:\n%v\n", A0)
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQRT(A, conf))
-    lapackd.DecomposeQRT(A, T, W, conf)
+    W := lapackd.Workspace(lapackd.QRTFactorWork(A, conf))
+    lapackd.QRTFactor(A, T, W, conf)
     //t.Logf("T:\n%v\n", T)
 
     // C = Q.T*A
-    W = lapackd.Workspace(lapackd.WorksizeMultQT(C, T, gomas.LEFT, conf))
-    lapackd.MultQT(C, A, T, W, gomas.LEFT|gomas.TRANS, conf)
+    W = lapackd.Workspace(lapackd.QRTMultWork(C, T, gomas.LEFT, conf))
+    lapackd.QRTMult(C, A, T, W, gomas.LEFT|gomas.TRANS, conf)
     
     // C = Q*C == Q*Q.T*A
-    lapackd.MultQT(C, A, T, W, gomas.LEFT, conf)
+    lapackd.QRTMult(C, A, T, W, gomas.LEFT, conf)
     //t.Logf("A*Q*Q.T:\n%v\n", C)
 
     // A = A - Q*Q.T*A
@@ -159,7 +159,7 @@ func TestMultQTLeftIdent(t *testing.T) {
 }
 
 // m > n: A[m,n], I[m,m] --> A.T == A.T*I == A.T*Q*Q.T
-func TestMultQTRightIdent(t *testing.T) {
+func TestQRTMultRightIdent(t *testing.T) {
     M := 511
 	N := 399
     nb := 16
@@ -176,17 +176,17 @@ func TestMultQTRightIdent(t *testing.T) {
     conf.LB = nb
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQRT(A, conf))
-    lapackd.DecomposeQRT(A, T, W, conf)
+    W := lapackd.Workspace(lapackd.QRTFactorWork(A, conf))
+    lapackd.QRTFactor(A, T, W, conf)
 
     // C = A*Q
-    W = lapackd.Workspace(lapackd.WorksizeMultQT(C, T, gomas.RIGHT, conf))
-    err := lapackd.MultQT(C, A, T, W, gomas.RIGHT, conf)
+    W = lapackd.Workspace(lapackd.QRTMultWork(C, T, gomas.RIGHT, conf))
+    err := lapackd.QRTMult(C, A, T, W, gomas.RIGHT, conf)
     if err != nil {
         t.Logf("err: %v\n", err)
     }
     // C = C*Q.T == A*Q*Q.T
-    err = lapackd.MultQT(C, A, T, W, gomas.RIGHT|gomas.TRANS, conf)
+    err = lapackd.QRTMult(C, A, T, W, gomas.RIGHT|gomas.TRANS, conf)
     if err != nil {
         t.Logf("err: %v\n", err)
     }

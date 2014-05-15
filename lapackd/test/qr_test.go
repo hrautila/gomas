@@ -16,7 +16,7 @@ import (
 )
 
 // test that unblocked QR and QRT are equal
-func TestDecomposeQR(t *testing.T) {
+func TestQRFactor(t *testing.T) {
     M := 411
 	N := 375
     nb := 16
@@ -34,21 +34,21 @@ func TestDecomposeQR(t *testing.T) {
     tau0 := cmat.NewCopy(tau)
 
     // blocked: QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
     
     conf.LB = 0
-    lapackd.DecomposeQR(A0, tau0, W, conf)
+    lapackd.QRFactor(A0, tau0, W, conf)
 
     ok := A.AllClose(A0)
-    t.Logf("blk.DecomposeQR(A) == unblk.DecomposeQR(A): %v\n", ok)
+    t.Logf("blk.QRFactor(A) == unblk.QRFactor(A): %v\n", ok)
 
     ok = tau0.AllClose(tau)
     t.Logf("blk QR.tau == unblk QR.tau: %v\n", ok)
 }
 
 // QR decompose A, then compute ||A - Q*R||_1, should be small
-func TestUnblkMultQLeft(t *testing.T) {
+func TestUnblkQRMultLeft(t *testing.T) {
     M := 711
 	N := 593
     A := cmat.NewMatrix(M, N)
@@ -62,15 +62,15 @@ func TestUnblkMultQLeft(t *testing.T) {
     conf.LB = 0
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
 
     // C = TriU(QR) = R
     C := cmat.TriU(cmat.NewCopy(A), cmat.NONE)
 
     // C = Q*C
-    W = lapackd.Workspace(lapackd.WorksizeMultQ(C, gomas.LEFT, conf))
-    err := lapackd.MultQ(C, A, tau, W, gomas.LEFT, conf)
+    W = lapackd.Workspace(lapackd.QRMultWork(C, gomas.LEFT, conf))
+    err := lapackd.QRMult(C, A, tau, W, gomas.LEFT, conf)
     if err != nil {
         t.Logf("err: %v\n", err)
     }
@@ -83,7 +83,7 @@ func TestUnblkMultQLeft(t *testing.T) {
 }
 
 // QR decompose A, then compute ||A - (R.T*Q.T).T||_1, should be small
-func TestUnblkMultQRight(t *testing.T) {
+func TestUnblkQRMultRight(t *testing.T) {
     M := 711
 	N := 593
     A := cmat.NewMatrix(M, N)
@@ -98,15 +98,15 @@ func TestUnblkMultQRight(t *testing.T) {
     conf.LB = 0
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
 
     // C = transpose(TriU(QR)) = R.T
     C.Transpose(cmat.TriU(cmat.NewCopy(A), cmat.NONE))
 
     // C = C*Q.T = R.T*Q.T
-    W = lapackd.Workspace(lapackd.WorksizeMultQ(C, gomas.RIGHT, conf))
-    err := lapackd.MultQ(C, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    W = lapackd.Workspace(lapackd.QRMultWork(C, gomas.RIGHT, conf))
+    err := lapackd.QRMult(C, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
     if err != nil {
         t.Logf("err: %v\n", err)
     }
@@ -120,7 +120,7 @@ func TestUnblkMultQRight(t *testing.T) {
 
 
 // QR decompose A, then compute ||A - Q*R||_1, should be small
-func TestBlockedMultQLeft(t *testing.T) {
+func TestBlockedQRMultLeft(t *testing.T) {
     M := 713
 	N := 645
     A := cmat.NewMatrix(M, N)
@@ -134,15 +134,15 @@ func TestBlockedMultQLeft(t *testing.T) {
     conf.LB = 32
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
     
     // C = TriU(QR) = R
     C := cmat.TriU(cmat.NewCopy(A), cmat.NONE)
 
     // C = Q*C
-    W = lapackd.Workspace(lapackd.WorksizeMultQ(C, gomas.LEFT, conf))
-    err := lapackd.MultQ(C, A, tau, W, gomas.LEFT, conf)
+    W = lapackd.Workspace(lapackd.QRMultWork(C, gomas.LEFT, conf))
+    err := lapackd.QRMult(C, A, tau, W, gomas.LEFT, conf)
     if err != nil {
         t.Logf("err: %v\n", err)
     }
@@ -156,7 +156,7 @@ func TestBlockedMultQLeft(t *testing.T) {
 
 
 // QR decompose A, then compute ||A - (R.T*Q.T).T||_1, should be small
-func TestBlockedMultQRight(t *testing.T) {
+func TestBlockedQRMultRight(t *testing.T) {
     M := 711
 	N := 593
     A := cmat.NewMatrix(M, N)
@@ -171,15 +171,15 @@ func TestBlockedMultQRight(t *testing.T) {
     conf.LB = 32
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
 
     // C = transpose(TriU(QR)) = R.T
     C.Transpose(cmat.TriU(cmat.NewCopy(A), cmat.NONE))
 
     // C = C*Q.T = R.T*Q.T
-    W = lapackd.Workspace(lapackd.WorksizeMultQ(C, gomas.RIGHT, conf))
-    err := lapackd.MultQ(C, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    W = lapackd.Workspace(lapackd.QRMultWork(C, gomas.RIGHT, conf))
+    err := lapackd.QRMult(C, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
     if err != nil {
         t.Logf("err: %v\n", err)
     }
@@ -193,7 +193,7 @@ func TestBlockedMultQRight(t *testing.T) {
 
 
 // m > n: A[m,n], I[m,m] --> A == I*A == Q*Q.T*A
-func TestUnblkMultQLeftIdent(t *testing.T) {
+func TestUnblkQRMultLeftIdent(t *testing.T) {
     M := 411
 	N := 399
     A := cmat.NewMatrix(M, N)
@@ -207,16 +207,16 @@ func TestUnblkMultQLeftIdent(t *testing.T) {
     conf.LB = 0
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
     //t.Logf("T:\n%v\n", T)
 
     // C = Q.T*A
-    W = lapackd.Workspace(lapackd.WorksizeMultQ(C, gomas.LEFT, conf))
-    lapackd.MultQ(C, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
+    W = lapackd.Workspace(lapackd.QRMultWork(C, gomas.LEFT, conf))
+    lapackd.QRMult(C, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
     
     // C = Q*C == Q*Q.T*A
-    lapackd.MultQ(C, A, tau, W, gomas.LEFT, conf)
+    lapackd.QRMult(C, A, tau, W, gomas.LEFT, conf)
     //t.Logf("A*Q*Q.T:\n%v\n", C)
 
     // A = A - Q*Q.T*A
@@ -228,7 +228,7 @@ func TestUnblkMultQLeftIdent(t *testing.T) {
 
 
 // m > n: A[m,n], I[m,m] --> A == I*A == Q*Q.T*A
-func TestBlkMultQLeftIdent(t *testing.T) {
+func TestBlkQRMultLeftIdent(t *testing.T) {
     M := 411
 	N := 399
     A := cmat.NewMatrix(M, N)
@@ -242,16 +242,16 @@ func TestBlkMultQLeftIdent(t *testing.T) {
     conf.LB = 32
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
     //t.Logf("T:\n%v\n", T)
 
     // C = Q.T*A
-    W = lapackd.Workspace(lapackd.WorksizeMultQ(C, gomas.LEFT, conf))
-    lapackd.MultQ(C, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
+    W = lapackd.Workspace(lapackd.QRMultWork(C, gomas.LEFT, conf))
+    lapackd.QRMult(C, A, tau, W, gomas.LEFT|gomas.TRANS, conf)
     
     // C = Q*C == Q*Q.T*A
-    lapackd.MultQ(C, A, tau, W, gomas.LEFT, conf)
+    lapackd.QRMult(C, A, tau, W, gomas.LEFT, conf)
     //t.Logf("A*Q*Q.T:\n%v\n", C)
 
     // A = A - Q*Q.T*A
@@ -262,7 +262,7 @@ func TestBlkMultQLeftIdent(t *testing.T) {
 }
 
 // m > n: A[m,n], I[m,m] --> A.T == A.T*I == A.T*Q*Q.T
-func TestUnblkMultQRightIdent(t *testing.T) {
+func TestUnblkQRMultRightIdent(t *testing.T) {
     M := 521
 	N := 497
     A := cmat.NewMatrix(M, N)
@@ -277,15 +277,15 @@ func TestUnblkMultQRightIdent(t *testing.T) {
     conf.LB = 0
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
 
     // C = A.T*Q
-    W = lapackd.Workspace(lapackd.WorksizeMultQ(C, gomas.RIGHT, conf))
-    lapackd.MultQ(C, A, tau, W, gomas.RIGHT, conf)
+    W = lapackd.Workspace(lapackd.QRMultWork(C, gomas.RIGHT, conf))
+    lapackd.QRMult(C, A, tau, W, gomas.RIGHT, conf)
 
     // C = C*Q.T == A.T*Q*Q.T
-    lapackd.MultQ(C, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.QRMult(C, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
 
     // A = A - (A.T*Q*Q.T).T
     blasd.Plus(A0, C, 1.0, -1.0, gomas.TRANSB)
@@ -295,7 +295,7 @@ func TestUnblkMultQRightIdent(t *testing.T) {
 }
 
 // m > n: A[m,n], I[m,m] --> A.T == A.T*I == A.T*Q*Q.T
-func TestBlockedMultQRightIdent(t *testing.T) {
+func TestBlockedQRMultRightIdent(t *testing.T) {
     M := 511
 	N := 489
     A := cmat.NewMatrix(M, N)
@@ -310,15 +310,15 @@ func TestBlockedMultQRightIdent(t *testing.T) {
     conf.LB = 32
 
     // QR = A = Q*R
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
 
     // C = A.T*Q
-    W = lapackd.Workspace(lapackd.WorksizeMultQ(C, gomas.RIGHT, conf))
-    lapackd.MultQ(C, A, tau, W, gomas.RIGHT, conf)
+    W = lapackd.Workspace(lapackd.QRMultWork(C, gomas.RIGHT, conf))
+    lapackd.QRMult(C, A, tau, W, gomas.RIGHT, conf)
     
     // C = C*Q.T == A.T*Q*Q.T
-    lapackd.MultQ(C, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
+    lapackd.QRMult(C, A, tau, W, gomas.RIGHT|gomas.TRANS, conf)
     //t.Logf("A*Q*Q.T:\n%v\n", C)
 
     // A = A - (A.T*Q*Q.T).T
@@ -328,7 +328,7 @@ func TestBlockedMultQRightIdent(t *testing.T) {
 	t.Logf("M=%d,N=%d  ||A - (A.T*Q*Q.T).T||_1: %e\n", M, N, nrm)
 }
 
-func TestBuildQR(t *testing.T) {
+func TestQRBuild(t *testing.T) {
     var d cmat.FloatMatrix
 
     M := 911
@@ -347,19 +347,19 @@ func TestBuildQR(t *testing.T) {
     d.Diag(C)
     
     conf.LB = lb
-    lapackd.DecomposeQR(A, tau, W, conf)
+    lapackd.QRFactor(A, tau, W, conf)
     A1 := cmat.NewCopy(A)
 
     conf.LB = 0
-    lapackd.BuildQR(A, tau, W, K, conf)
+    lapackd.QRBuild(A, tau, W, K, conf)
 
     blasd.Mult(C, A, A,  1.0, 0.0, gomas.TRANSA, conf)
     blasd.Add(&d, -1.0)
     n0 := lapackd.NormP(C, lapackd.NORM_ONE)
 
     conf.LB = lb
-    W2 := lapackd.Workspace(lapackd.WorksizeBuildQR(A, conf))
-    lapackd.BuildQR(A1, tau, W2, K, conf)
+    W2 := lapackd.Workspace(lapackd.QRBuildWork(A, conf))
+    lapackd.QRBuild(A1, tau, W2, K, conf)
 
     blasd.Mult(C, A1, A1,  1.0, 0.0, gomas.TRANSA, conf)
     blasd.Add(&d, -1.0)
@@ -368,7 +368,7 @@ func TestBuildQR(t *testing.T) {
     blasd.Plus(A, A1, 1.0, -1.0, gomas.NONE)
     n2 := lapackd.NormP(A, lapackd.NORM_ONE)
 
-    t.Logf("M=%d, N=%d, K=%d ||unblk.BuildQR(A) - blk.BuildQR(A)||_1 :%e\n", M, N, K, n2)
+    t.Logf("M=%d, N=%d, K=%d ||unblk.QRBuild(A) - blk.QRBuild(A)||_1 :%e\n", M, N, K, n2)
     t.Logf("unblk M=%d, N=%d, K=%d ||I - Q.T*Q||_1: %e\n", M, N, K, n0)
     t.Logf("  blk M=%d, N=%d, K=%d ||I - Q.T*Q||_1: %e\n", M, N, K, n1)
 }

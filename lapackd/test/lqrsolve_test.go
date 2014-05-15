@@ -35,14 +35,14 @@ func TestLeastSquaresQR(t *testing.T) {
     // B = A*B0
     blasd.Mult(B, A, B0, 1.0, 0.0, gomas.NONE, conf)
 
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    err := lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    err := lapackd.QRFactor(A, tau, W, conf)
     if err != nil {
         t.Logf("DecomposeQR: %v\n", err)
     }
 
     // B' = A.-1*B
-    err = lapackd.SolveQR(B, A, tau, W, gomas.NONE, conf)
+    err = lapackd.QRSolve(B, A, tau, W, gomas.NONE, conf)
     if err != nil {
         t.Logf("SolveQR: %v\n", err)
     }
@@ -75,10 +75,10 @@ func TestSolveQR(t *testing.T) {
     B0.SetFrom(src)
     B := cmat.NewCopy(B0)
 
-    W := lapackd.Workspace(lapackd.WorksizeQR(A, conf))
-    lapackd.DecomposeQR(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.QRFactorWork(A, conf))
+    lapackd.QRFactor(A, tau, W, conf)
 
-    lapackd.SolveQR(B, A, tau, W, gomas.TRANS, conf)
+    lapackd.QRSolve(B, A, tau, W, gomas.TRANS, conf)
 
     var Bmin cmat.FloatMatrix
     Bmin.SubMatrix(B0, 0, 0, N, K)
@@ -108,11 +108,11 @@ func TestLeastSquaresLQ(t *testing.T) {
     // B = A.T*B0
     blasd.Mult(B, A, B0, 1.0, 0.0, gomas.TRANSA, conf)
 
-    W := lapackd.Workspace(lapackd.WorksizeLQ(A, conf))
-    lapackd.DecomposeLQ(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.LQFactorWork(A, conf))
+    lapackd.LQFactor(A, tau, W, conf)
 
     // B' = A.-1*B
-    lapackd.SolveLQ(B, A, tau, W, gomas.TRANS, conf)
+    lapackd.LQSolve(B, A, tau, W, gomas.TRANS, conf)
 
     // expect B[0:M,0:K] == B0[0:M,0:K], B[M:N,0:K] == 0
     var X cmat.FloatMatrix
@@ -143,10 +143,10 @@ func TestSolveLQ(t *testing.T) {
     B0.SetFrom(src)
     B := cmat.NewCopy(B0)
 
-    W := lapackd.Workspace(lapackd.WorksizeLQ(A, conf))
-    lapackd.DecomposeLQ(A, tau, W, conf)
+    W := lapackd.Workspace(lapackd.LQFactorWork(A, conf))
+    lapackd.LQFactor(A, tau, W, conf)
 
-    lapackd.SolveLQ(B, A, tau, W, gomas.NONE, conf)
+    lapackd.LQSolve(B, A, tau, W, gomas.NONE, conf)
 
     var Bmin cmat.FloatMatrix
     Bmin.SubMatrix(B0, 0, 0, M, K)

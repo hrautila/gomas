@@ -246,7 +246,7 @@ func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, c
   *
   * DecomposeQR is compatible with lapack.DGEQRF
   */
-func DecomposeQR(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func QRFactor(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
 
@@ -292,7 +292,7 @@ func wsQR(A *cmat.FloatMatrix, lb int) int {
  *
  * Returns size of workspace as number of elements.
  */
-func WorksizeQR(A *cmat.FloatMatrix, confs... *gomas.Config) int {
+func QRFactorWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     conf := gomas.CurrentConf(confs...)
     return wsQR(A, conf.LB)
 }
@@ -380,7 +380,7 @@ func unblkQRBlockReflector(T, A, tau *cmat.FloatMatrix) {
  *
  * Compatible with lapack.DLAFRT
  */
-func BuildT(T, A, tau *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
+func QRReflector(T, A, tau *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
 
     if n(T) < n(A) || m(T) < n(A) {
         return gomas.NewError(gomas.ESIZE, "BuildT")

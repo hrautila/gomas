@@ -234,14 +234,14 @@ func blockedMultQTRight(C, A, T, W *cmat.FloatMatrix, flags int, conf *gomas.Con
  * Arguments:
  *  C     On entry, the M-by-N matrix C. On exit C is overwritten by Q*C or Q.T*C.
  *
- *  A     QR factorization as returned by DecomposeQRT() where the lower trapezoidal
+ *  A     QR factorization as returned by QRTFactor() where the lower trapezoidal
  *        part holds the elementary reflectors.
  *
  *  T     The block reflector computed from elementary reflectors as returned by
  *        DecomposeQRT() or computed from elementary reflectors and scalar coefficients
  *        by BuildT()
  *
- *  W     Workspace, size as returned by WorkspaceMultQT()
+ *  W     Workspace, size as returned by QRTMultWork()
  *
  *  conf  Blocking configuration
  *
@@ -260,11 +260,11 @@ func blockedMultQTRight(C, A, T, W *cmat.FloatMatrix, flags int, conf *gomas.Con
  *
  * Compatible with lapack.DGEMQRT
  */
-func MultQT(C, A, T, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func QRTMult(C, A, T, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
 
-    wsz := WorksizeMultQT(C, T, flags, conf)
+    wsz := QRTMultWork(C, T, flags, conf)
     if W == nil || W.Len() < wsz {
         return gomas.NewError(gomas.EWORK, "MultQT", wsz)
     }
@@ -295,7 +295,7 @@ func MultQT(C, A, T, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *go
  * Calculate workspace size needed to compute C*Q or Q*C with QR decomposition
  * computed with DecomposeQRT().
  */
-func WorksizeMultQT(C, T *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz int) {
+func QRTMultWork(C, T *cmat.FloatMatrix, bits int, confs... *gomas.Config) (sz int) {
     conf := gomas.CurrentConf(confs...)
 
     switch bits & gomas.RIGHT {
@@ -345,7 +345,7 @@ func WorksizeMultQT(C, T *cmat.FloatMatrix, bits int, confs... *gomas.Config) (s
  *
  * Compatible with lapack.GELS (the m >= n part)
  */
-func SolveQRT(B, A, T, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
+func QRTSolve(B, A, T, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     var R, BT cmat.FloatMatrix
     conf := gomas.CurrentConf(confs...)
@@ -363,12 +363,12 @@ func SolveQRT(B, A, T, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
         BT.SetFrom(cmat.NewFloatConstSource(0.0))
         
         // X = Q*B'
-        err = MultQT(B, A, T, W, gomas.LEFT, conf)
+        err = QRTMult(B, A, T, W, gomas.LEFT, conf)
     } else {
         // solve least square problem min ||A*X - B||
 
         // B' = Q.T*B
-        err = MultQT(B, A, T, W, gomas.LEFT|gomas.TRANS, conf)
+        err = QRTMult(B, A, T, W, gomas.LEFT|gomas.TRANS, conf)
         if err != nil {
             return err
         }

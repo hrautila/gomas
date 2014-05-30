@@ -111,7 +111,11 @@ func Continue3x1to2x1(AT, AB, A0, A1, A *cmat.FloatMatrix, pdir Direction) {
 func Merge2x1(ABLK, AT, AB *cmat.FloatMatrix) {
     tr, tc := AT.Size()
     br, _  := AB.Size()
-    ABLK.SubMatrix(AT, 0, 0, tr+br, tc)
+    if tr > 0 {
+        ABLK.SubMatrix(AT, 0, 0, tr+br, tc)
+    } else {
+        ABLK.SubMatrix(AB, 0, 0, br, tc)
+    }
 }
 
 /*
@@ -123,7 +127,11 @@ func Merge2x1(ABLK, AT, AB *cmat.FloatMatrix) {
 func Merge1x2(ABLK, AL, AR *cmat.FloatMatrix) {
     lr, lc := AL.Size()
     _ , rc := AR.Size()
-    ABLK.SubMatrix(AL, 0, 0, lr, lc+rc)
+    if lc > 0 {
+        ABLK.SubMatrix(AL, 0, 0, lr, lc+rc)
+    } else {
+        ABLK.SubMatrix(AR, 0, 0, lr, rc)
+    }
 }
 
 /*

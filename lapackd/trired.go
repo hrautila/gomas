@@ -393,7 +393,7 @@ func unblkBuildTridiagUpper(A, tauq, Y, W *cmat.FloatMatrix) {
         computeHouseholderRev(&a01, &tauq1)
         tauqv := tauq1.Get(0, 0)
 		
-        // set subdiagonal to unit
+        // set sub&iagonal to unit
         v0 = a01.Get(-1, 0)
         a01.Set(-1, 0, 1.0)
         
@@ -570,9 +570,40 @@ func TRDReduceWork(A *cmat.FloatMatrix, confs... *gomas.Config) int {
     return wsTridiag(A, conf.LB)
 }
 
+/*
+ * 
+ */
 func TRDMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
+    var Ch, Qh, tauh cmat.FloatMatrix
+    
+    if flags & gomas.LOWER != 0 {
+        if flags & gomas.LEFT != 0 {
+            Ch.SubMatrix(C, 1, 0, m(C)-1, n(C))
+        } else {
+            Ch.SubMatrix(C, 0, 1, m(C), n(C)-1)
+        }
+        Qh.SubMatrix(A, 1, 0, m(A)-1, m(A)-1)
+        tauh.SubMatrix(tau, 0, 0, m(A)-1, 1)
+        err = QRMult(&Ch, &Qh, &tauh, W, flags, confs...)
+    } else {
+        if flags & gomas.LEFT != 0 {
+            Ch.SubMatrix(C, 0, 0, m(C)-1, n(C))
+        } else {
+            Ch.SubMatrix(C, 0, 0, m(C), n(C)-1)
+        }
+        Qh.SubMatrix(A, 0, 1, m(A)-1, m(A)-1)
+        tauh.SubMatrix(tau, 0, 0, m(A)-1, 1)
+        err = QLMult(&Ch, &Qh, &tauh, W, flags, confs...)
+    }
     return err
+}
+
+func TRDMultWork(A *cmat.FloatMatrix, flags int, confs... *gomas.Config) int {
+    if flags & gomas.UPPER != 0 { 
+        return QLMultWork(A, flags, confs...)
+    }
+    return QRMultWork(A, flags, confs...)
 }
 
 // Local Variables:

@@ -272,11 +272,11 @@ func blkMultRightQL(C, A, tau, W *cmat.FloatMatrix, flags, lb int, conf *gomas.C
 
     var Aref *cmat.FloatMatrix
     var pAdir, pAstart, pDir, pStart, pCdir, pCstart util.Direction
-    var mb, tb, nb int
+    var mb, tb, nb, cb int
 
     // partitioning start and direction
     if flags & gomas.TRANS != 0 {
-        // from top-left to bottom-right to produce normal sequence (Q*C)
+        // from top-left to bottom-right to produce transpose sequence (C*Q.T)
         pAstart = util.PTOPLEFT
         pAdir   = util.PBOTTOMRIGHT
         pStart  = util.PTOP
@@ -285,10 +285,11 @@ func blkMultRightQL(C, A, tau, W *cmat.FloatMatrix, flags, lb int, conf *gomas.C
         pCdir   = util.PRIGHT
         mb      = imax(0, m(A) - n(A))
         nb      = imax(0, n(A) - m(A))
+        cb      = imax(0, n(C) - n(A))
         tb      = imax(0, tau.Len() - n(A))
         Aref    = &ABR
     } else {
-        // A from bottom-right to top-left to produce transposed sequence (Q.T*C)
+        // A from bottom-right to top-left to produce normal sequence (C*Q)
         pAstart = util.PBOTTOMRIGHT
         pAdir   = util.PTOPLEFT
         pStart  = util.PBOTTOM
@@ -298,17 +299,18 @@ func blkMultRightQL(C, A, tau, W *cmat.FloatMatrix, flags, lb int, conf *gomas.C
         mb      = 0
         tb      = 0
         nb      = 0
+        cb      = 0
         Aref    = &ATL
     }
 
     util.Partition2x2(
         &ATL, nil,
-        nil,  &ABR,  A, mb, nb, pAstart)
+        nil,  &ABR,  /**/ A, mb, nb, pAstart)
     util.Partition1x2(
-        &CL, &CR,    C, mb, pCstart)
+        &CL, &CR,    /**/ C, cb, pCstart)
     util.Partition2x1(
         &tT,
-        &tB,         tau, tb, pStart)
+        &tB,         /**/ tau, tb, pStart)
 
     transpose := flags & gomas.TRANS != 0
     // divide workspace for block reflector and temporary work matrix
@@ -319,14 +321,14 @@ func blkMultRightQL(C, A, tau, W *cmat.FloatMatrix, flags, lb int, conf *gomas.C
         util.Repartition2x2to3x3(&ATL,
             &A00, &A01, nil,
             nil,  &A11, nil,
-            nil,  nil,  &A22,   A, lb, pAdir)
+            nil,  nil,  &A22,  /**/ A, lb, pAdir)
+        bsz := n(&A11)
+        util.Repartition1x2to1x3(&CL,
+            &C0, &C1, &C2,     /**/ C,   bsz, pCdir)
         util.Repartition2x1to3x1(&tT,
             &t0,
             &tau1,
-            &t2,     tau, lb, pDir)
-        bsz := n(&A11)
-        util.Repartition1x2to1x3(&CL,
-            &C0, &C1, &C2,      C,   bsz, pCdir)
+            &t2,     /**/ tau, bsz, pDir)
         // --------------------------------------------------------
         util.Merge2x1(&AL, &A01, &A11)
         T.SubMatrix(&T0, 0, 0, bsz, bsz)
@@ -338,12 +340,12 @@ func blkMultRightQL(C, A, tau, W *cmat.FloatMatrix, flags, lb int, conf *gomas.C
         // --------------------------------------------------------
         util.Continue3x3to2x2(
             &ATL, nil,
-            nil,  &ABR,   &A00, &A11, &A22,   A, pAdir)
+            nil,  &ABR,   /**/ &A00, &A11, &A22,   A, pAdir)
         util.Continue1x3to1x2(
-            &CL,  &CR,    &C0, &C1,     C, pCdir)
+            &CL,  &CR,    /**/ &C0, &C1,     C, pCdir)
         util.Continue3x1to2x1(
             &tT,
-            &tB,          &t0, &tau1,   tau, pDir)
+            &tB,          /**/ &t0, &tau1,   tau, pDir)
     }
 }
 
@@ -392,13 +394,13 @@ func QLMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
         ok = m(C) == m(A)
     }
     if ! ok {
-        return gomas.NewError(gomas.ESIZE, "MultQL")
+        return gomas.NewError(gomas.ESIZE, "QLMult")
     }
 
     // minimum workspace size
     wsz := wsizer(C, 0)
     if W == nil || W.Len() < wsz {
-        return gomas.NewError(gomas.EWORK, "MultQL", wsz)
+        return gomas.NewError(gomas.EWORK, "QLMult", wsz)
     }
 
     // estimate blocking factor for current workspace

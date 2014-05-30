@@ -232,10 +232,8 @@ func updateQLRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf 
   * Compute QL factorization of a M-by-N matrix A: A = Q * L.
   *
   * Arguments:
-  *  A   On entry, the M-by-N matrix A. On exit, the elements on and below
-  *      the diagonal contain the min(M,N)-by-N lower trapezoidal matrix L.
-  *      The elements above the diagonal with the column vector 'tau', represent
-  *      the ortogonal matrix Q as product of elementary reflectors.
+  *  A    On entry, the M-by-N matrix A, M >= N. On exit, lower triangular matrix L
+  *       and the orthogonal matrix Q as product of elementary reflectors.
   *
   * tau  On exit, the scalar factors of the elemenentary reflectors.
   *
@@ -252,7 +250,7 @@ func updateQLRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf 
   *
   *  Ortogonal matrix Q is product of elementary reflectors H(k)
   *
-  *    Q = H(k)...H(2)H(1), where K = min(M,N)
+  *    Q = H(K-1)...H(1)H(0), where K = min(M,N)
   *
   *  Elementary reflector H(k) is stored on column k of A above the diagonal with
   *  implicit unit value on diagonal entry. The vector TAU holds scalar factors
@@ -260,11 +258,11 @@ func updateQLRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, conf 
   *
   *  Contents of matrix A after factorization is as follow:
   *
-  *    ( v1 v2 v3 v4 )   for M=6, N=4
-  *    ( v1 v2 v3 v4 )
-  *    ( l  v2 v3 v4 )
-  *    ( l  l  v3 v4 )
-  *    ( l  l  l  v4 )
+  *    ( v0 v1 v2 v3 )   for M=6, N=4
+  *    ( v0 v1 v2 v3 )
+  *    ( l  v1 v2 v3 )
+  *    ( l  l  v2 v3 )
+  *    ( l  l  l  v3 )
   *    ( l  l  l  l  )
   *
   *  where l is element of L, vk is element of H(k).
@@ -275,16 +273,21 @@ func QLFactor(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error 
     var err *gomas.Error = nil
     var tauh cmat.FloatMatrix
     conf := gomas.CurrentConf(confs...)
+
+    if m(A) < n(A) {
+        return gomas.NewError(gomas.ESIZE, "QLFactor")
+    }
     wsmin := wsQL(A, 0)
     if W == nil || W.Len() < wsmin {
-        return gomas.NewError(gomas.EWORK, "DecomposeQL", wsmin)
+        return gomas.NewError(gomas.EWORK, "QLFactor", wsmin)
     }
-    if tau.Len() < imin(m(A), n(A)) {
-        return gomas.NewError(gomas.ESIZE, "DecomposeQL")
+    if tau.Len() < n(A) {
+        return gomas.NewError(gomas.ESIZE, "QLFactor")
     }
-    tauh.SubMatrix(tau, 0, 0, imin(m(A), n(A)), 1)
+    tauh.SubMatrix(tau, 0, 0, n(A), 1)
     lb := estimateLB(A, W.Len(), wsQL)
     lb = imin(lb, conf.LB)
+
     if lb == 0 || n(A) <= lb {
         unblockedQL(A, &tauh, W)
     } else {
@@ -390,11 +393,14 @@ func unblkQLBlockReflector(T, A, tau *cmat.FloatMatrix) {
     }
 }
 
+/*
+ * Build block reflector for QL factorized matrix.
+ */
 func QLReflector(T, A, tau *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var tauh cmat.FloatMatrix
 
     if n(T) < n(A) || m(T) < n(A) {
-        return gomas.NewError(gomas.ESIZE, "BuildQLT")
+        return gomas.NewError(gomas.ESIZE, "QLReflector")
     }
 
     tauh.SubMatrix(tau, 0, 0, imin(m(A), n(A)), 1)

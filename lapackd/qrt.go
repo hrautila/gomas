@@ -225,9 +225,9 @@ func buildQRTReflector(T, A, S *cmat.FloatMatrix, nc int, conf *gomas.Config) *g
  * T     On exit, the K block reflectors which, together with trilu(A) represent
  *       the ortogonal matrix Q as Q = I - Y*T*Y.T where Y = trilu(A).
  *       K is ceiling(N/LB) where LB is blocking size from used blocking configuration.
- *       The matrix T is LB*N augmented matrix of K block reflectors, T = [T(0) T(1) .. T(K-1)].
- *       Block reflector T(n) is LB*LB matrix, expect reflector T(K-1) that is IB*IB matrix
- *       where IB = min(LB, K % LB)
+ *       The matrix T is LB*N augmented matrix of K block reflectors,
+ *       T = [T(0) T(1) .. T(K-1)].  Block reflector T(n) is LB*LB matrix, expect
+ *       reflector T(K-1) that is IB*IB matrix  where IB = min(LB, K % LB)
  *
  * W     Workspace, required size returned by QRTFactorWork().
  *
@@ -237,16 +237,20 @@ func buildQRTReflector(T, A, S *cmat.FloatMatrix, nc int, conf *gomas.Config) *g
  * Returns:
  *      Error indicator.
  *
- * DecomposeQRT is compatible with lapack.DGEQRT
+ * QRTFactor is compatible with lapack.DGEQRT
  */
 func QRTFactor(A, T, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf  := gomas.CurrentConf(confs...)
     ok    := false
     rsize := 0
+
+    if m(A) < n(A) {
+        return gomas.NewError(gomas.ESIZE, "QRTFactor")
+    }
     wsz   := QRTFactorWork(A, conf)
     if W == nil || W.Len() < wsz {
-        return gomas.NewError(gomas.EWORK, "DecomposeQRT", wsz)
+        return gomas.NewError(gomas.EWORK, "QRTFactor", wsz)
     }
 
     tr, tc := T.Size()
@@ -258,7 +262,7 @@ func QRTFactor(A, T, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
         rsize = conf.LB*n(A)
     }
     if !ok {
-        return gomas.NewError(gomas.ESMALL, "DecomposeQRT", rsize)
+        return gomas.NewError(gomas.ESMALL, "QRTFactor", rsize)
     }
 
     if conf.LB == 0 || n(A) <= conf.LB {

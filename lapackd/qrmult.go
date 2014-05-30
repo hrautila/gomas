@@ -392,7 +392,7 @@ func blockedMultQRight(C, A, tau, W *cmat.FloatMatrix, flags, nb int, conf *goma
  * Multiply and replace C with Q*C or Q.T*C where Q is a real orthogonal matrix
  * defined as the product of k elementary reflectors.
  *
- *    Q = H(1) H(2) . . . H(k)
+ *    Q = H(0) H(1) . . . H(K-1)
  *
  * as returned by QRFactor().
  *
@@ -432,13 +432,13 @@ func QRMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
         ok = m(C) == m(A)
     }
     if ! ok {
-        return gomas.NewError(gomas.ESIZE, "MultQ")
+        return gomas.NewError(gomas.ESIZE, "QRMult")
     }
 
     // minimum workspace size
     wsz := wsizer(C, 0)
     if W == nil || W.Len() < wsz {
-        return gomas.NewError(gomas.EWORK, "MultQ", wsz)
+        return gomas.NewError(gomas.EWORK, "QRMult", wsz)
     }
 
     // estimate blocking factor for current workspace

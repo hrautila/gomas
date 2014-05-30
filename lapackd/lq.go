@@ -205,12 +205,10 @@ func updateRightLQ(C1, C2, Y1t, Y2t, T, W *cmat.FloatMatrix, transpose bool, con
   * Compute LQ factorization of a M-by-N matrix A: A = L*Q 
   *
   * Arguments:
-  *  A   On entry, the M-by-N matrix A. On exit, the elements on and below
-  *      the diagonal contain the min(M,N)-by-N lower trapezoidal matrix L.
-  *      The elements above the diagonal with the column vector TAU, represent
-  *      the ortogonal matrix Q as product of elementary reflectors.
+  *  A    On entry, the M-by-N matrix A, M <= N. On exit, lower triangular matrix L
+  *       and the orthogonal matrix Q as product of elementary reflectors.
   *
-  * tau  On exit, the scalar factors of the elemenentary reflectors.
+  * tau  On exit, the scalar factors of the elementary reflectors.
   *
   * W    Workspace, M-by-nb matrix used for work space in blocked invocations. 
   *
@@ -225,7 +223,7 @@ func updateRightLQ(C1, C2, Y1t, Y2t, T, W *cmat.FloatMatrix, transpose bool, con
   *
   * Ortogonal matrix Q is product of elementary reflectors H(k)
   *
-  *   Q = H(K)H(K-1),...,H(1), where K = min(M,N)
+  *   Q = H(K-1)H(K-2),...,H(0), where K = min(M,N)
   *
   * Elementary reflector H(k) is stored on row k of A right of the diagonal with
   * implicit unit value on diagonal entry. The vector TAU holds scalar factors of
@@ -233,10 +231,10 @@ func updateRightLQ(C1, C2, Y1t, Y2t, T, W *cmat.FloatMatrix, transpose bool, con
   *
   * Contents of matrix A after factorization is as follow:
   *
-  *    ( l  v1 v1 v1 v1 v1 )  for M=4, N=6
-  *    ( l  l  v2 v2 v2 v2 )
-  *    ( l  l  l  v3 v3 v3 )
-  *    ( l  l  l  l  v4 v4 )
+  *    ( l  v0 v0 v0 v0 v0 )  for M=4, N=6
+  *    ( l  l  v1 v1 v1 v1 )
+  *    ( l  l  l  v2 v2 v2 )
+  *    ( l  l  l  l  v3 v3 )
   *
   * where l is element of L, vk is element of H(k).
   *
@@ -246,9 +244,14 @@ func LQFactor(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error 
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
 
+    // must have: M <= N
+    if m(A) > n(A) {
+        return gomas.NewError(gomas.ESIZE, "LQFactor")
+    }
+
     wsmin := wsLQ(A, 0)
     if W == nil || W.Len() < wsmin {
-        return gomas.NewError(gomas.EWORK, "DecomposeLQ", wsmin)
+        return gomas.NewError(gomas.EWORK, "LQFactor", wsmin)
     }
     lb := estimateLB(A, W.Len(), wsLQ)
     lb = imin(lb, conf.LB)

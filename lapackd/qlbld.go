@@ -178,11 +178,11 @@ func QLBuild(A, tau, W *cmat.FloatMatrix, K int, confs... *gomas.Config) *gomas.
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
     if K <= 0 || K > n(A) {
-        return gomas.NewError(gomas.EVALUE, "BuildQL", K)
+        return gomas.NewError(gomas.EVALUE, "QLBuild", K)
     }
     wsz := wsBuildQL(A, 0)
     if W == nil || W.Len() < wsz {
-        return gomas.NewError(gomas.EWORK, "BuildQL", wsz)
+        return gomas.NewError(gomas.EWORK, "QLBuild", wsz)
     }
 
     // adjust blocking factor for workspace size

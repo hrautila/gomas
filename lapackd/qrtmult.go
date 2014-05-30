@@ -266,7 +266,7 @@ func QRTMult(C, A, T, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
 
     wsz := QRTMultWork(C, T, flags, conf)
     if W == nil || W.Len() < wsz {
-        return gomas.NewError(gomas.EWORK, "MultQT", wsz)
+        return gomas.NewError(gomas.EWORK, "QRTMult", wsz)
     }
     ok := false
     switch flags & gomas.RIGHT {
@@ -276,7 +276,7 @@ func QRTMult(C, A, T, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *g
         ok = m(C) >= n(A)
     }
     if ! ok {
-        return gomas.NewError(gomas.ESIZE, "MultQT")
+        return gomas.NewError(gomas.ESIZE, "QRTMult")
     }
 
     var Wrk cmat.FloatMatrix

@@ -156,7 +156,7 @@ func blkBuildLQ(A, Tvec, Twork, W *cmat.FloatMatrix, K, lb int, conf *gomas.Conf
  * reflectors.
  *
  * Arguments
- *   A     On entry, the elementary reflectors as returned by DecomposeLQ().
+ *   A     On entry, the elementary reflectors as returned by LQFactor().
  *         stored right of diagonal of the M by N matrix A.
  *         On exit, the orthogonal matrix Q
  *
@@ -174,11 +174,11 @@ func LQBuild(A, tau, W *cmat.FloatMatrix, K int, confs... *gomas.Config) *gomas.
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
     if K <= 0 || K > n(A) {
-        return gomas.NewError(gomas.EVALUE, "BuildLQ", K)
+        return gomas.NewError(gomas.EVALUE, "LQBuild", K)
     }
     wsz := wsBuildLQ(A, 0)
     if W == nil || W.Len() < wsz {
-        return gomas.NewError(gomas.EWORK, "BuildLQ", wsz)
+        return gomas.NewError(gomas.EWORK, "LQBuild", wsz)
     }
 
     // adjust blocking factor for workspace size

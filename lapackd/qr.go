@@ -207,18 +207,16 @@ func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, c
   * Compute QR factorization of a M-by-N matrix A: A = Q * R.
   *
   * Arguments:
-  *  A   On entry, the M-by-N matrix A. On exit, the elements on and above
-  *      the diagonal contain the min(M,N)-by-N upper trapezoidal matrix R.
-  *      The elements below the diagonal with the column vector 'tau', represent
-  *      the ortogonal matrix Q as product of elementary reflectors.
+  *  A    On entry, the M-by-N matrix A, M >= N. On exit, upper triangular matrix R
+  *       and the orthogonal matrix Q as product of elementary reflectors.
   *
-  * tau  On exit, the scalar factors of the elemenentary reflectors.
+  *  tau  On exit, the scalar factors of the elemenentary reflectors.
   *
-  * W    Workspace, N-by-nb matrix used for work space in blocked invocations. 
+  *  W    Workspace, N-by-nb matrix used for work space in blocked invocations. 
   *
-  * conf The blocking configuration. If nil then default blocking configuration
-  *      is used. Member conf.LB defines blocking size of blocked algorithms.
-  *      If it is zero then unblocked algorithm is used.
+  *  conf The blocking configuration. If nil then default blocking configuration
+  *       is used. Member conf.LB defines blocking size of blocked algorithms.
+  *       If it is zero then unblocked algorithm is used.
   *
   * Returns:
   *      Error indicator.
@@ -227,7 +225,7 @@ func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, c
   *
   *  Ortogonal matrix Q is product of elementary reflectors H(k)
   *
-  *    Q = H(1)H(2),...,H(K), where K = min(M,N)
+  *    Q = H(0)H(1),...,H(K-1), where K = min(M,N)
   *
   *  Elementary reflector H(k) is stored on column k of A below the diagonal with
   *  implicit unit value on diagonal entry. The vector TAU holds scalar factors
@@ -236,23 +234,26 @@ func updateWithQTRight(C1, C2, Y1, Y2, T, W *cmat.FloatMatrix, transpose bool, c
   *  Contents of matrix A after factorization is as follow:
   *
   *    ( r  r  r  r  )   for M=6, N=4
-  *    ( v1 r  r  r  )
-  *    ( v1 v2 r  r  )
-  *    ( v1 v2 v3 r  )
-  *    ( v1 v2 v3 v4 )
-  *    ( v1 v2 v3 v4 )
+  *    ( v0 r  r  r  )
+  *    ( v0 v1 r  r  )
+  *    ( v0 v1 v2 r  )
+  *    ( v0 v1 v2 v3 )
+  *    ( v0 v1 v2 v3 )
   *
   *  where r is element of R, vk is element of H(k).
   *
-  * DecomposeQR is compatible with lapack.DGEQRF
+  * QRFactor is compatible with lapack.DGEQRF
   */
 func QRFactor(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
 
+    if m(A) < n(A) {
+        return gomas.NewError(gomas.ESIZE, "QRFactor")
+    }
     wsz := wsQR(A, 0)
     if W == nil || W.Len() < wsz {
-        return gomas.NewError(gomas.EWORK, "DecomposeQR", wsz)
+        return gomas.NewError(gomas.EWORK, "QRFactor", wsz)
     }
 
     lb := estimateLB(A, W.Len(), wsQR)
@@ -383,7 +384,7 @@ func unblkQRBlockReflector(T, A, tau *cmat.FloatMatrix) {
 func QRReflector(T, A, tau *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error {
 
     if n(T) < n(A) || m(T) < n(A) {
-        return gomas.NewError(gomas.ESIZE, "BuildT")
+        return gomas.NewError(gomas.ESIZE, "QRReflector")
     }
 
     unblkQRBlockReflector(T, A, tau)

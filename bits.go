@@ -7,24 +7,30 @@
 
 package gomas
 
-// these bits must be in sync with bits in C-header interfaces.h
 const (
-    TRANSA = 1 << iota  // A transposed
-    TRANSB              // B transposed
-    TRANS               // transposed matrix
-    LOWER               // lower triangular matrix
+    LOWER  = 1 << iota  // lower triangular matrix
     UPPER               // upper triangular matrix
+    SYMM                // symmetric matrix
+    HERM                // hermitian matrix
+    UNIT                // unit diagonal matrix
     LEFT                // multiply from left
     RIGHT               // multiply from right
-    UNIT                // unit diagonal matrix
+    TRANSA              // A transposed
+    TRANSB              // B transposed
     CONJA               // A is conjugate
     CONJB               // B is conjugate
-    CONJ                // conjugate matrix
-    SYMM                // symmetric matrix
+    // bits above must be in sync with bits in C-header blasd/inc/interfaces.h
+    // bits below are lapack spesific
     MULTQ               // multiply with orthogonal Q
     MULTP               // multiply with orthogonal P
+    WANTQ               // generate orthogonal matrix Q
+    WANTP               // generate orthogonal matrix P
+    WANTU               // generate orthogonal left eigenvectors U
+    WANTV               // generate orthogonal right eigenvectors V
     NULL = 0
     NONE = 0
+    TRANS = TRANSA     // transposed matrix
+    CONJ  = CONJA      // conjugate matrix
 )
 
 

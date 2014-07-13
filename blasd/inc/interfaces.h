@@ -16,32 +16,35 @@
 enum armas_flags {
   GOMAS_NOTRANS = 0,
   GOMAS_NULL    = 0,
-  // operand A is transposed
+  GOMAS_LOWER  = 0x0001,        // lower triangular matrix
+  GOMAS_UPPER  = 0x0002,        // upper triangular matrix 
+  GOMAS_SYMM   = 0x0004,        // symmetric matrix
+  GOMAS_HERM   = 0x0008,        // hermitian matrix
+  GOMAS_UNIT   = 0x0010,        // unit diagonal matrix
+  GOMAS_LEFT   = 0x0020,        // multiplicaton from left
+  GOMAS_RIGHT  = 0x0040,        // multiplicaton from right
+  GOMAS_TRANSA = 0x0080,        // operand A is transposed
+  GOMAS_TRANS  = GOMAS_TRANSA,  // matrix operand is transposed
+  GOMAS_TRANSB = 0x0100,        // operand B is transposed
+  GOMAS_CONJA  = 0x0200,        // operand A is conjugate transposed
+  GOMAS_CONJ   = GOMAS_CONJA,   // matrix operand is conjugate transposed
+  GOMAS_CONJB  = 0x0400,        // operand B is conjugate transposed
+
+  /*
   GOMAS_TRANSA  = 0x1,          
-  // operand B is transposed
   GOMAS_TRANSB  = 0x2,
-  // matrix operand is transposed
   GOMAS_TRANS   = 0x4,
-  // lower triangular matrix
   GOMAS_LOWER   = 0x8,
-  // upper triangular matrix 
   GOMAS_UPPER   = 0x10,
-  // multiplicaton from left
   GOMAS_LEFT    = 0x20,
-  // multiplicaton from right
   GOMAS_RIGHT   = 0x40,
-  // unit diagonal matrix
   GOMAS_UNIT    = 0x80,
-  // operand A is conjugate transposed
   GOMAS_CONJA   = 0x100,
-  // operand B is conjugate transposed
   GOMAS_CONJB   = 0x200,
-  // matrix operand is conjugate transposed
   GOMAS_CONJ    = 0x400,
-  // symmetric matrix
   GOMAS_SYMM    = 0x800,
-  // hermitian matrix
   GOMAS_HERM    = 0x1000,
+  */
 };
 
 

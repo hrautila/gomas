@@ -68,7 +68,45 @@ func UpdateTrm(Cc, A, B *cmat.FloatMatrix, alpha, beta float64, bits int, confs.
     if !ok {
         return gomas.NewError(gomas.ESIZE, "UpdateTrm")
     }
-    updtrm(Cc, A, B, alpha, beta, bits, P, 0, L, 0, E, conf)
+    // single threaded
+    if conf.NProc == 1 || conf.WB <= 0 || Cc.Len() < conf.WB*conf.WB {
+        updtrm(Cc, A, B, alpha, beta, bits, P, 0, L, 0, E, conf)
+        return nil
+    }
+    // parallelized
+    wait := make(chan int, 4)
+    nM, nN := blocking(cr, cc, conf.WB)
+    nT := 0
+    if bits & gomas.UPPER != 0 {
+        // by rows; upper trapezoidial
+        for j := 0; j < nM; j++ {
+            iR := blockIndex(j, nM, conf.WB, cr)
+            iE := blockIndex(j+1, nM, conf.WB, cr)
+            task := func(q chan int) {
+                updtrm(Cc, A, B, alpha, beta, bits, P, iR, L, iR, iE, conf)
+                q <- 1
+            }
+            conf.Sched.Schedule(gomas.NewTask(task, wait))
+            nT += 1
+        }
+    } else {
+        // by columns; lower trapezoidial
+        for j := 0; j < nN; j++ {
+            jS := blockIndex(j, nN, conf.WB, cc)
+            jL := blockIndex(j+1, nN, conf.WB, cc)
+            task := func(q chan int) {
+                updtrm(Cc, A, B, alpha, beta, bits, P, jS, jL, jS, E, conf)
+                q <- 1
+            }
+            conf.Sched.Schedule(gomas.NewTask(task, wait))
+            nT += 1
+        }
+    }
+    // wait for subtasks to complete
+    for nT > 0 {
+        <- wait
+        nT -= 1
+    }
     return nil
 }
 

@@ -10,7 +10,7 @@ package blasd
 // #cgo CFLAGS: -O3 -march=native -fomit-frame-pointer -ffast-math -Iinc -I.
 // #cgo LDFLAGS: -lm
 // #include "inc/interfaces.h"
-import  "C"
+import "C"
 import "unsafe"
 import "github.com/hrautila/cmat"
 import "github.com/hrautila/gomas"
@@ -76,7 +76,35 @@ func Mult(Cc, A, B *cmat.FloatMatrix, alpha, beta float64, bits int, confs... *g
         return gomas.NewError(gomas.ESIZE, "Mult")
     }
 
-    gemm(Cc, A, B, alpha, beta, bits, P, 0, L, 0, E, conf)
+    // single threaded
+    if conf.NProc == 1 || conf.WB <= 0 || Cc.Len() < conf.WB*conf.WB {
+        gemm(Cc, A, B, alpha, beta, bits, P, 0, L, 0, E, conf)
+        return nil
+    }
+    // parallelized
+    wait := make(chan int, 4)
+    nM, nN := blocking(cr, cc, conf.WB)
+    nT := int64(0)
+
+    for j := 0; j < nN; j++ {
+        jS := blockIndex(j, nN, conf.WB, cc)
+        jL := blockIndex(j+1, nN, conf.WB, cc)
+        for i := 0; i < nM; i++ {
+            iR := blockIndex(i,   nM, conf.WB, cr)
+            iE := blockIndex(i+1, nM, conf.WB, cr)
+            task := func(q chan int) {
+                gemm(Cc, A, B, alpha, beta, bits, P, jS, jL, iR, iE, conf)
+                q <- 1
+            }
+            nT += 1
+            conf.Sched.Schedule(gomas.NewTask(task, wait))
+        }
+    }
+    // wait for subtask to complete
+    for nT > 0 {
+        <- wait
+        nT -= 1
+    }
     return nil
 }
 

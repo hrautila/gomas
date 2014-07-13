@@ -63,8 +63,55 @@ func UpdateSym(c, a *cmat.FloatMatrix, alpha, beta float64, bits int, confs... *
     }
     if !ok {
         return gomas.NewError(gomas.ESIZE, "UpdateSym")
+    } 
+    if conf.NProc == 1 || conf.WB <= 0 || E <= conf.WB {
+        syrk(c, a, alpha, beta, bits, P, 0, E, conf)
+        return nil
     }
-    syrk(c, a, alpha, beta, bits, P, 0, E, conf)
+
+    // parallelized
+    var sbits int = 0
+    wait := make(chan int, 4)
+    nM, nN := blocking(E, E, conf.WB)
+    nT := 0
+    if bits & gomas.TRANS != 0 {
+        sbits |= gomas.TRANSA
+    } else {
+        sbits |= gomas.TRANSB
+    }
+    if bits & gomas.LOWER != 0 {
+        sbits |= gomas.LOWER
+        for j := 0; j < nN; j++ {
+            jS := blockIndex(j, nN, conf.WB, E)
+            jL := blockIndex(j+1, nN, conf.WB, E)
+            // update lower trapezoidal/triangular blocks
+            task := func(q chan int) {
+                updtrm(c, a, a, alpha, beta, sbits, P, jS, jL, jS, E, conf)
+                //syrk(c, a, alpha, beta, bits, P, jS, jL, conf)
+                q <- 1
+            }
+            conf.Sched.Schedule(gomas.NewTask(task, wait))
+            nT += 1
+        }
+    } else {
+        sbits |= gomas.UPPER
+        for j := 0; j < nM; j++ {
+            jS := blockIndex(j, nM, conf.WB, E)
+            jL := blockIndex(j+1, nM, conf.WB, E)
+            // update upper trapezoidal/triangular blocks
+            task := func(q chan int) {
+                updtrm(c, a, a, alpha, beta, sbits, P, jS, E, jS, jL, conf)
+                //syrk(c, a, alpha, beta, bits, P, jS, jL, conf)
+                q <- 1
+            }
+            conf.Sched.Schedule(gomas.NewTask(task, wait))
+            nT += 1
+        }
+    }
+    for nT > 0 {
+        <- wait
+        nT -= 1
+    }
     return nil
 }
 

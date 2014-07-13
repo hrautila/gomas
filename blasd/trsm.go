@@ -63,7 +63,29 @@ func SolveTrm(B, A *cmat.FloatMatrix, alpha float64, bits int, confs... *gomas.C
     if !ok {
         return gomas.NewError(gomas.ESIZE, "SolveTrm")
     }
-    trsm(B, A, alpha, bits, ac, 0, E, conf)
+    // single threaded
+    if conf.NProc == 1 || conf.WB <= 0 || E < conf.WB/2 {
+        trsm(B, A, alpha, bits, ac, 0, E, conf)
+        return nil
+    }
+    // parallelized
+    wait := make(chan int, 4)
+    _, nN := blocking(0, E, conf.WB/2)
+    nT := 0
+    for j := 0; j < nN; j++ {
+        jS := blockIndex(j, nN, conf.WB/2, E)
+        jL := blockIndex(j+1, nN, conf.WB/2, E)
+        task := func(q chan int) {
+            trsm(B, A, alpha, bits, ac, jS, jL, conf)
+            q <- 1
+        }
+        conf.Sched.Schedule(gomas.NewTask(task, wait))
+        nT += 1
+    }
+    for nT > 0 {
+        <- wait
+        nT -= 1
+    }
     return nil
 }
 

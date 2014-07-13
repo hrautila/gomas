@@ -65,7 +65,28 @@ func Update2Sym(Cc, A, B *cmat.FloatMatrix, alpha, beta float64, bits int, confs
     if !ok {
         return gomas.NewError(gomas.ESIZE, "Update2Sym")
     }
-    syr2k(Cc, A, B, alpha, beta, bits, P, 0, E, conf)
+    if conf.NProc == 1 || conf.WB <= 0 || E <= conf.WB {
+        syr2k(Cc, A, B, alpha, beta, bits, P, 0, E, conf)
+        return nil
+    }
+    // parallelized
+    wait := make(chan int, 4)
+    _, nN := blocking(0, E, conf.WB)
+    nT := 0
+    for j := 0; j < nN; j++ {
+        jS := blockIndex(j, nN, conf.WB, E)
+        jE := blockIndex(j+1, nN, conf.WB, E)
+        task := func(q chan int) {
+            syr2k(Cc, A, B, alpha, beta, bits, P, jS, jE, conf)
+            q <- 1
+        }
+        conf.Sched.Schedule(gomas.NewTask(task, wait))
+        nT += 1
+    }
+    for nT > 0 {
+        <- wait
+        nT -= 1
+    }
     return nil
 }
 

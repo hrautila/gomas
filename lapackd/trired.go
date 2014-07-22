@@ -606,6 +606,81 @@ func TRDMultWork(A *cmat.FloatMatrix, flags int, confs... *gomas.Config) int {
     return QRMultWork(A, flags, confs...)
 }
 
+/*
+ * Generates the real orthogonal matrix Q which is defined as the product of K elementary
+ * reflectors of order N embedded in matrix A as returned by TRDReduce().
+ *
+ *   A     On entry tridiagonal reduction as returned by TRDReduce().
+ *         On exit the orthogonal matrix Q.
+ *
+ *  tau    Scalar coefficients of elementary reflectors.
+ *
+ *  W      Workspace
+ *
+ *  K      Number of reflectors , 0 < K < N
+ *
+ *  flags  LOWER or UPPER
+ *
+ *  confs  Optional blocking configuration
+ *
+ * If flags has UPPER set then
+ *    Q = H(K)...H(1)H(0) where 0 < K < N-1 
+ *
+ * If flags has LOWR set then
+ *    Q = H(0)H(1)...H(K) where 0 < K < N-1 
+ */
+func TRDBuild(A, tau, W *cmat.FloatMatrix, K, flags int, confs... *gomas.Config) *gomas.Error {
+    var err *gomas.Error = nil
+    var Qh, tauh cmat.FloatMatrix
+    var s, d cmat.FloatMatrix
+    
+    if K > m(A)-1 {
+        K = m(A) - 1
+    }
+
+    switch flags & (gomas.LOWER|gomas.UPPER) {
+    case gomas.LOWER:
+        // Shift Q matrix embedded in A right and fill first column
+        // unit column vector
+        for j := m(A)-1; j > 1; j-- {
+            s.SubMatrix(A, j, j-1, m(A)-j, 1)
+            d.SubMatrix(A, j, j,   m(A)-j, 1)
+            blasd.Copy(&d, &s)
+            A.Set(0, j, 0.0)
+        }
+        // zero first column and set first entry to one
+        d.Column(A, 0)
+        blasd.Scale(&d, 0.0)
+        d.Set(0, 0, 1.0)
+
+        Qh.SubMatrix(A, 1, 1, m(A)-1, m(A)-1)
+        tauh.SubMatrix(tau, 0, 0, m(A)-1, 1)
+        err = QRBuild(&Qh, &tauh, W, K, confs...)
+
+    case gomas.UPPER:
+        // Shift Q matrix embedded in A left and fill last column
+        // unit column vector
+        for j := 1; j < m(A); j++ {
+            s.SubMatrix(A, 0, j,   j, 1)
+            d.SubMatrix(A, 0, j-1, j, 1)
+            blasd.Copy(&d, &s)
+            A.Set(-1, j-1, 0.0)
+        }
+        // zero last column and set last entry to one
+        d.Column(A, m(A)-1)
+        blasd.Scale(&d, 0.0)
+        d.Set(-1, 0, 1.0)
+
+        Qh.SubMatrix(A, 0, 0, m(A)-1, m(A)-1)
+        tauh.SubMatrix(tau, 0, 0, m(A)-1, 1)
+        err = QLBuild(&Qh, &tauh, W, K, confs...)
+    }
+    if err != nil {
+        err.Update("TRDBuild")
+    }
+    return err
+}
+
 // Local Variables:
 // tab-width: 4
 // indent-tabs-mode: nil

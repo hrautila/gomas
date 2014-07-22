@@ -937,11 +937,87 @@ func BDMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
         }
     }
     if err != nil {
-        err.Update("MultQBD")
+        err.Update("BDMult")
     }
     return err
 }
 
+/*
+ * Generate one of the orthogonal matrices Q or P.T determined by BDReduce() when
+ * reducing a real matrix A to bidiagonal form. Q and P.T are defined as products
+ * elementary reflectors H(i) or G(i) respectively.
+ *
+ * Orthogonal matrix Q is generated if flag WANTQ is set. And matrix P respectively
+ * of flag WANTP is set.
+ */
+func BDBuild(A, tau, W *cmat.FloatMatrix, K, flags int, confs... *gomas.Config) *gomas.Error {
+    var Qh, Ph, tauh, d, s cmat.FloatMatrix
+    var err *gomas.Error = nil
+
+    if m(A) == 0 || n(A) == 0 {
+        return nil
+    }
+
+    if m(A) >= n(A) {
+        switch flags & (gomas.WANTQ|gomas.WANTP) {
+        case gomas.WANTQ:
+            tauh.SubMatrix(tau, 0, 0, n(A), 1)
+            err = QRBuild(A, &tauh, W, K, confs...)
+
+        case gomas.WANTP:
+            // Shift P matrix embedded in A down and fill first column and row
+            // to unit vector
+            for j := n(A)-1; j > 0; j-- {
+                s.SubMatrix(A, j-1, j, 1, n(A)-j)
+                d.SubMatrix(A, j,   j, 1, n(A)-j)
+                blasd.Copy(&d, &s)
+                A.Set(j, 0, 0.0)
+            }
+            // zero  first row and set first entry to one
+            d.Row(A, 0)
+            blasd.Scale(&d, 0.0)
+            d.Set(0, 0, 1.0)
+
+            Ph.SubMatrix(A, 1, 1, n(A)-1, n(A)-1)
+            tauh.SubMatrix(tau, 0, 0, n(A)-1, 1)
+            if K > n(A)-1 {
+                K = n(A) - 1
+            }
+            err = LQBuild(&Ph, &tauh, W, K, confs...)
+        }
+    } else {
+        switch flags & (gomas.WANTQ|gomas.WANTP) {
+        case gomas.WANTQ: 
+            // Shift Q matrix embedded in A right and fill first column and row
+            // to unit vector
+            for j := m(A)-1; j > 0; j-- {
+                s.SubMatrix(A, j, j-1, m(A)-j, 1)
+                d.SubMatrix(A, j, j,   m(A)-j, 1)
+                blasd.Copy(&d, &s)
+                A.Set(0, j, 0.0)
+            }
+            // zero first column and set first entry to one
+            d.Column(A, 0)
+            blasd.Scale(&d, 0.0)
+            d.Set(0, 0, 1.0)
+
+            Qh.SubMatrix(A, 1, 1, m(A)-1, m(A)-1)
+            tauh.SubMatrix(tau, 0, 0, m(A)-1, 1)
+            if K > m(A) - 1 {
+                K = m(A) - 1
+            }
+            err = QRBuild(&Qh, &tauh, W, K, confs...)
+
+        case gomas.WANTP:
+            tauh.SubMatrix(tau, 0, 0, m(A), 1)
+            err = LQBuild(A, &tauh, W, K, confs...)
+        }
+    }
+    if err != nil {
+        err.Update("BDBuild")
+    }
+    return err
+}
 
 func wsBired(A *cmat.FloatMatrix, lb int) int  {
     if lb == 0 {

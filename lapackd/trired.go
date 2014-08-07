@@ -642,7 +642,7 @@ func TRDBuild(A, tau, W *cmat.FloatMatrix, K, flags int, confs... *gomas.Config)
     case gomas.LOWER:
         // Shift Q matrix embedded in A right and fill first column
         // unit column vector
-        for j := m(A)-1; j > 1; j-- {
+        for j := m(A)-1; j > 0; j-- {
             s.SubMatrix(A, j, j-1, m(A)-j, 1)
             d.SubMatrix(A, j, j,   m(A)-j, 1)
             blasd.Copy(&d, &s)

@@ -7,6 +7,7 @@
 
 package gomas
 
+
 const (
     LOWER  = 1 << iota  // lower triangular matrix
     UPPER               // upper triangular matrix
@@ -27,15 +28,27 @@ const (
     WANTP               // generate orthogonal matrix P
     WANTU               // generate orthogonal left eigenvectors U
     WANTV               // generate orthogonal right eigenvectors V
+    FORWARD             // apply forwards
+    BACKWARD            // apply backward
     NULL = 0
     NONE = 0
     TRANS = TRANSA     // transposed matrix
     CONJ  = CONJA      // conjugate matrix
 )
 
+const (
+    OPT_ABSTOL = 1 << iota  // absolute tolerance
+)
 
-// calculated machine epsilon; smallest float64 number E for which 1.0 + E != 1.0
-const Epsilon = 2.2204460492503131e-16        
+const Descending = -1
+const Ascending = 1
+
+// largest float64 number E for which 1.0 + E == 1.0
+const Epsilon = 1.110223024625156540423631668090820312500e-16
+// smallest float64 number E for which 1.0 + E != 1.0
+const Eps2 = 2.220446049250313080847263336181640625000e-16
+
+const Safemin = 2.225073858507201383090232717332404064219e-308 
 
 // Local Variables:
 // tab-width: 4

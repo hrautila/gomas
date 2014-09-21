@@ -9,6 +9,7 @@ package lapackd
 
 import (
     "github.com/hrautila/cmat"
+    "github.com/hrautila/gomas"
     "math"
 )
 
@@ -57,90 +58,30 @@ import (
 func ComputeGivens(a, b float64)  (c float64, s float64, r float64) {
 
     if b == 0.0 {
-        if math.Signbit(a) {
-            c = -a
-        } else {
-            c = a
-        }
+        c = 1.0
         s = 0.0
-        r = math.Abs(a)
+        r = a
     } else if a == 0.0 {
-        if math.Signbit(b) {
-            s = -b
-        } else  {
-            s = b
-        }
         c = 0.0
-        r = math.Abs(b)
+        s = 1.0
+        r = b
     } else if math.Abs(b) > math.Abs(a) {
         t := a/b
         u := math.Sqrt(1.0 + t*t)
         if math.Signbit(b) {
             u = -u
         }
-        s = -1.0/u
-        c = -s*t
+        s = 1.0/u
+        c = s*t
         r = b*u
     } else {
         t := b/a
         u := math.Sqrt(1.0 + t*t)
-        if math.Signbit(a) {
-            u = -u
-        }
-        c = 1.0 / u
-        s = -c*t
         r = a*u
+        c = 1.0 / u
+        s = c*t
     }
     return 
-}
-
-/*
- * Compute A[i:i+1,j:j+nc] = G(c,s)*A[i:i+1,j:j+nc]
- *
- * Applies Givens rotation to nc columns on rows i:i+1 of A starting from column j.
- */
-func ApplyGivensLeft(A *cmat.FloatMatrix, i, j, nc int, c, s float64) {
-    if m(A)-i < 2 {
-        // one row
-        for k := j; k < j+nc; k++ {
-            v0 := A.Get(i, k)
-            A.Set(i, k, c*v0)
-        }
-        return
-    }
-    for k := j; k < j+nc; k++ {
-        v0 := A.Get(i,   k)
-        v1 := A.Get(i+1, k)
-        y0 := c*v0 - s*v1
-        y1 := s*v0 + c*v1
-        A.Set(i,   k, y0)
-        A.Set(i+1, k, y1)
-    }
-}
-
-/*
- * Compute A[i:i+nr,j:j+1] = A[i:i+nr,j:j+1]*G(c,s)
- *
- * Applies Givens rotation to nr rows of columns j:j+1 of A starting at row i.
- *
- */
-func ApplyGivensRight(A *cmat.FloatMatrix, i, j, nr int, c, s float64) {
-    if n(A)-j < 2 {
-        // one column
-        for k := i; k < i+nr; k++ {
-            v0 := A.Get(k, j)
-            A.Set(k, j, c*v0)
-        }
-        return
-    }
-    for k := i; k < i+nr; k++ {
-        v0 := A.Get(k, j)
-        v1 := A.Get(k, j+1)
-        y0 := v0*c - v1*s
-        y1 := v1*c + v0*s
-        A.Set(k, j+0, y0)
-        A.Set(k, j+1, y1)
-    }
 }
 
 /*
@@ -151,12 +92,127 @@ func ApplyGivensRight(A *cmat.FloatMatrix, i, j, nr int, c, s float64) {
  *
  *    ( y0 y1 ) = ( v0 v1 ) * G(c,s)
  */
-func RotateGivens(v0, v1, c, s float64) (y0, y1 float64) {
-    y0 = c*v0 - s*v1
-    y1 = s*v0 + c*v1
+func RotateGivens(v0, v1, cos, sin float64) (y0, y1 float64) {
+    y0 = cos*v0 + sin*v1
+    y1 = cos*v1 - sin*v0
     return
 }
 
+/*
+ * Compute A[i:i+1,j:j+nc] = G(c,s)*A[i:i+1,j:j+nc]
+ *
+ * Applies Givens rotation to nc columns on rows r1,r2 of A starting from col.
+ */
+func ApplyGivensLeft(A *cmat.FloatMatrix, r1, r2, col, ncol int, cos, sin float64) {
+    if col >= n(A) {
+        return
+    }
+    if r1 == r2 {
+        // one row
+        for k := col; k < col+ncol; k++ {
+            v0 := A.Get(r1, k)
+            A.Set(r1, k, cos*v0)
+        }
+        return
+    }
+    for k := col; k < col+ncol; k++ {
+        v0 := A.Get(r1, k)
+        v1 := A.Get(r2, k)
+        y0 := cos*v0 + sin*v1
+        y1 := cos*v1 - sin*v0
+        A.Set(r1,  k, y0)
+        A.Set(r2, k, y1)
+    }
+}
+
+/*
+ * Compute A[i:i+nr,c1;c2] = A[i:i+nr,c1;c2]*G(c,s)
+ *
+ * Applies Givens rotation to nr rows of columns c1, c2 of A starting at row.
+ *
+ */
+func ApplyGivensRight(A *cmat.FloatMatrix, c1, c2, row, nrow int, cos, sin float64) {
+    if row >= m(A) {
+        return
+    }
+    if c1 == c2 {
+        // one column
+        for k := row; k < row+nrow; k++ {
+            v0 := A.Get(k, c1)
+            A.Set(k, c1, cos*v0)
+        }
+        return
+    }
+    for k := row; k < row+nrow; k++ {
+        v0 := A.Get(k, c1)
+        v1 := A.Get(k, c2)
+        y0 := cos*v0 + sin*v1
+        y1 := cos*v1 - sin*v0
+        A.Set(k, c1, y0)
+        A.Set(k, c2, y1)
+    }
+}
+
+func UpdateGivens(A *cmat.FloatMatrix, start int, C, S *cmat.FloatMatrix, nrot, flags int) int {
+    var k, l int 
+    var cos, sin float64
+    end := start + nrot 
+
+    if flags & gomas.BACKWARD != 0 {
+        if flags & gomas.LEFT != 0 {
+            end = imin(m(A), end)
+            k = end; l = nrot;
+            for l > 0 && k > start {
+                cos = C.GetAt(l-1)
+                sin = S.GetAt(l-1)
+                if  cos != 1.0 || sin != 0.0 {
+                    ApplyGivensLeft(A, k-1, k, 0, n(A), cos, sin)
+                }
+                l--
+                k--
+            }
+        } else {
+            end = imin(n(A), end)
+            k = end; l = nrot;
+            for l > 0 && k > start {
+                cos = C.GetAt(l-1)
+                sin = S.GetAt(l-1)
+                if  cos != 1.0 || sin != 0.0 {
+                    ApplyGivensRight(A, k-1, k, 0, m(A), cos, sin)
+                }
+                l--
+                k--
+            }
+        }
+    } else {
+        if flags & gomas.LEFT != 0 {
+            end = imin(m(A), end)
+            k = start; l = 0;
+            for l < nrot && k < end {
+                cos = C.GetAt(l)
+                sin = S.GetAt(l)
+                if  cos != 1.0 || sin != 0.0 {
+                    ApplyGivensLeft(A, k, k+1, 0, n(A), cos, sin)
+                }
+                l++
+                k++
+            }
+        } else {
+            end = imin(n(A), end)
+            k = start; l = 0;
+            for l < nrot && k < end {
+                cos = C.GetAt(l)
+                sin = S.GetAt(l)
+                if  cos != 1.0 || sin != 0.0 {
+                    ApplyGivensRight(A, k, k+1, 0, m(A), cos, sin)
+                }
+                l++
+                k++
+            }
+        }
+    }
+    return nrot
+}
 
 // Local Variables:
 // tab-width: 4

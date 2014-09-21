@@ -52,9 +52,9 @@ func TestGivensQR(t *testing.T) {
             A.Set(i, j, r)
             A.Set(i+1, j, 0.0)
             // apply rotations on this row starting from column j, N-j column
-            lapackd.ApplyGivensLeft(A, i, j+1, N-j-1, c, s)
+            lapackd.ApplyGivensLeft(A, i, i+1, j+1, N-j-1, c, s)
             // update Qt = G(k)*Qt 
-            lapackd.ApplyGivensLeft(Qt, i, 0, M, c, s)
+            lapackd.ApplyGivensLeft(Qt, i, i+1, 0, M, c, s)
         }
     }
     // check: A = Q*R
@@ -89,9 +89,9 @@ func TestGivensLQ(t *testing.T) {
             A.Set(i, j,   r)
             A.Set(i, j+1, 0.0)
             // apply rotation to this column starting from row i+1
-            lapackd.ApplyGivensRight(A, i+1, j, M-i-1, c, s)
+            lapackd.ApplyGivensRight(A, j, j+1, i+1, M-i-1, c, s)
             // update Qt = G(k)*Qt
-            lapackd.ApplyGivensRight(Qt, 0, j, N, c, s)
+            lapackd.ApplyGivensRight(Qt, j, j+1, 0, N, c, s)
         }
     }
     // A = L*Q

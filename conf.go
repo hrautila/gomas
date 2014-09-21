@@ -33,11 +33,15 @@ type Config struct {
     NProc int
     // block factor for parallel execution
     WB int
+    // tolerance coefficient
+    TolMult int
+    // option flags
+    Flags int
     // current scheduler
     Sched *Scheduler
 }
 
-var __config Config = Config{64, 96, 160, 32, 1, 480, nil}
+var __config Config = Config{64, 96, 160, 32, 1, 480, 5, 0, nil}
 
 func init() {
     var cval int64
@@ -100,7 +104,15 @@ func DefaultConf() *Config {
 
 // Create new configuration block with initial values from default configuration.
 func NewConf() *Config {
-    return &Config{__config.MB, __config.NB, __config.KB, __config.LB, __config.NProc, __config.WB, __config.Sched}
+    return &Config{__config.MB,
+        __config.NB,
+        __config.KB,
+        __config.LB,
+        __config.NProc,
+        __config.WB,
+        __config.TolMult,
+        __config.Flags,
+        __config.Sched}
 }
 
 // Get current configuration. If parameter list is not empty return first configuration

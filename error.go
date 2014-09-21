@@ -20,7 +20,9 @@ const (
     ESINGULAR
     EWORK
     ESMALL
+    ECONVERGE
 )
+
 
 var errors = map[int]string {
     ENEED_VECTOR: "Vector argument needed",
@@ -32,6 +34,7 @@ var errors = map[int]string {
     ESINGULAR: "Zero on diagonal",
     EWORK: "Work space too small",
     ESMALL: "Argument matrix too small.", 
+    ECONVERGE: "Did not converge.", 
 }
 
 type Error struct {

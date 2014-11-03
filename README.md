@@ -2,7 +2,8 @@ GO Matrix Algebra Subroutines
 -----------------------------
 
 Implementations of BLAS level 1, 2 and 3 routines and some LAPACK routines for double precision floating point.
-This package is rewrite of my MATOPS package using different matrix implementation.
+This package is rewrite of my MATOPS package using different matrix implementation. It is alsoe related to
+pure C versions of the same routines in my ARMAS library.
 
 Some key ideas on implementation
 
@@ -13,10 +14,9 @@ Some key ideas on implementation
 - Use SIMD instruction when available
 - Higher level algorithms with libFLAME like implementation
 - Unblocked and blocked versions
-- Need to support parallelization
+- Supports parallel execution of BLAS3 routines
 - More Go/C like call interface
 
-At the moment there is no threading support for parallel execution of operations. 
 This is WORK IN PROGRESS. Consider this as beta level code, at best. 
 
 ### Some numbers 
@@ -81,6 +81,7 @@ and 2.4 GHz clock rate we get 7.04 operations/cycle, ~ 88% of theoretical maximu
 
 ### Lapack
   
+    BDSvd(D, E, U, V, W, flagss, conf)	        Bidiagonal SVD (DBDSQR)
     BDMult(C, A, tau, W, flags, conf)           Multiply with bidiagonal Q or P matrix (DORMBR)
     BDReduce(A, tauq, taup, W, conf)            Bidiagonal reduction (DGEBRD)
     BKFactor(A, W, flags, conf)                 Bunch-Kauffman LDL.T factorization (DSYTRF)
@@ -105,7 +106,18 @@ and 2.4 GHz clock rate we get 7.04 operations/cycle, ~ 88% of theoretical maximu
     QRTFactor(A, T, W, conf)                    QR factorization with compact WY transformation (DGEQRT)
     QRTMult(C, A, T, W, flags, conf)            Multiply with Q or Q.T, compact WY transformation (DORMQR)
     QRTSolve(B, A, W, flags, conf)              Solve QRWY factorized linear system
+    TRDEigen(D, E, V, W, flags, conf)           Compute eigenvalues and vectors of tridiagonal matrix (DSTEQR)
     TRDReduce(A, tau, W, flags, conf)           Tridiagonal reduction (DGETRD)
+    TRDBuild(A, tau, W, K, flags, conf)	        Generate Q for tridiagonal reduction (DORGTR)
+    TRDMult(C, A, tau, W, flags, conf)	        Multiply with Q or Q.T (DORMTR)
+    TRDSecularSolve(Y, D, Z, delta, rho, conf)  Solve tridiagonal secular function 
+    TRDSecularSolveAll(Y, V, Qd, D, Z, rho)     Solve secular function and compute eigenvectors
+    TRDSecularEigen(Q, v, Qd, conf)             Compute eigenvectors for update eigenvalues
+    ComputeGivens(a, b)	                        Compute Givens rotation
+    RotateGivens(v0, v1, cos, sin)              Apply Givens rotation
+    ApplyGivensLeft(A, r1, r2, col, nc, c, s)   Apply Givens rotation to matrix A from left
+    ApplyGivensRight(A, r1, r2, col, nc, c, s)  Apply Givens rotation to matrix A from right
+    UpdateGivens(A, from, C, S, nrot, flags)    Apply rotations from C,S to A
 
 ###  Other
 

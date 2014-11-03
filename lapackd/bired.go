@@ -891,6 +891,10 @@ func BDMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
     var Qh, Ch, Ph, tauh cmat.FloatMatrix
     var err *gomas.Error = nil
 
+    // default to multiply from left if side not defined
+    if flags & (gomas.LEFT|gomas.RIGHT) == 0 {
+        flags = flags | gomas.LEFT
+    }
     // if MULTP then flip TRANSPOSE-bit 
     if flags & gomas.MULTP != 0 {
         // LQ.P     = G(k)G(k-1)...G(1) and
@@ -903,7 +907,7 @@ func BDMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
         }
     }
 
-    if m(A) >= n(A) {
+    if m(A) > n(A) || (m(A) == n(A) && flags & gomas.LOWER == 0) {
         switch flags & (gomas.MULTQ|gomas.MULTP) {
         case gomas.MULTQ:
             tauh.SubMatrix(tau, 0, 0, n(A), 1)
@@ -948,7 +952,7 @@ func BDMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
  * elementary reflectors H(i) or G(i) respectively.
  *
  * Orthogonal matrix Q is generated if flag WANTQ is set. And matrix P respectively
- * of flag WANTP is set.
+ * if flag WANTP is set.
  */
 func BDBuild(A, tau, W *cmat.FloatMatrix, K, flags int, confs... *gomas.Config) *gomas.Error {
     var Qh, Ph, tauh, d, s cmat.FloatMatrix
@@ -958,7 +962,7 @@ func BDBuild(A, tau, W *cmat.FloatMatrix, K, flags int, confs... *gomas.Config) 
         return nil
     }
 
-    if m(A) >= n(A) {
+    if m(A) > n(A) || (m(A) == n(A) && flags & gomas.LOWER == 0) {
         switch flags & (gomas.WANTQ|gomas.WANTP) {
         case gomas.WANTQ:
             tauh.SubMatrix(tau, 0, 0, n(A), 1)

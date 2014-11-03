@@ -252,7 +252,7 @@ func RQFactor(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error 
     }
     lb := estimateLB(A, W.Len(), wsRQ)
     lb = imin(lb, conf.LB)
-    if lb == 0 || n(A) <= lb {
+    if lb == 0 || m(A) <= lb {
         unblockedRQ(A, tau, W)
     } else {
         var Twork, Wrk cmat.FloatMatrix

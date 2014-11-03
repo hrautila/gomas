@@ -255,7 +255,7 @@ func LQFactor(A, tau, W *cmat.FloatMatrix, confs... *gomas.Config) *gomas.Error 
     }
     lb := estimateLB(A, W.Len(), wsLQ)
     lb = imin(lb, conf.LB)
-    if lb == 0 || n(A) <= lb {
+    if lb == 0 || m(A) <= lb {
         unblockedLQ(A, tau, W)
     } else {
         var Twork, Wrk cmat.FloatMatrix

@@ -383,6 +383,10 @@ func QLMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
     var err *gomas.Error = nil
     conf := gomas.CurrentConf(confs...)
 
+    // default to multiply from left if side not defined
+    if flags & (gomas.LEFT|gomas.RIGHT) == 0 {
+        flags = flags | gomas.LEFT
+    }
     // n(A) is number of elementary reflectors defining the Q matrix
     ok := false
     wsizer := wsMultLeftQL
@@ -406,7 +410,7 @@ func QLMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
     // estimate blocking factor for current workspace
     lb := estimateLB(C, W.Len(), wsizer)
     lb = imin(lb, conf.LB)
-    if lb == 0 {
+    if lb == 0 || n(A) <= lb {
         if flags & gomas.RIGHT != 0 {
             unblkMultRightQL(C, A, tau, W, flags)
         } else {

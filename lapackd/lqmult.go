@@ -442,6 +442,10 @@ func LQMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
     var Qh, tauh cmat.FloatMatrix
     conf := gomas.CurrentConf(confs...)
 
+    // default to multiply from left if side not defined
+    if flags & (gomas.LEFT|gomas.RIGHT) == 0 {
+        flags = flags | gomas.LEFT
+    }
     // m(A) is number of elementary reflectors, Q is n(A)-by-n(A) matrix
     ok := false
     lb := 0
@@ -473,7 +477,7 @@ func LQMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
         tauval = tau.Get(hc-1, 0)
         tau.Set(hc-1, 0, 0.0)
     }
-    if conf.LB == 0 {
+    if lb == 0 || m(A) <= lb {
         if flags & gomas.RIGHT != 0 {
             unblockedMultLQRight(C, &Qh, &tauh, W, flags)
         } else {

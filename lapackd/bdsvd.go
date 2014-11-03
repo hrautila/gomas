@@ -348,7 +348,7 @@ func bdMakeUpper(D, E, U, C, CS *cmat.FloatMatrix) {
 /*
  * \brief Compute SVD of bidiagonal matrix.
  *
- * Computes the singular values and, optionially, the left and/or right
+ * Computes the singular values and, optionally, the left and/or right
  * singular vectors from the SVD of a N-by-N upper or lower bidiagonal
  * matrix. The SVD of B has the form
  *
@@ -376,7 +376,7 @@ func BDSvd(D, E, U, V, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
         if U == nil {
             return gomas.NewError(gomas.EVALUE, "BDSvd")
         }
-        if n(U) != N {
+        if n(U) < N {
             return gomas.NewError(gomas.ESIZE, "BDSvd")
         }
         uu = U
@@ -385,10 +385,7 @@ func BDSvd(D, E, U, V, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
         if V == nil {
             return gomas.NewError(gomas.EVALUE, "BDSvd")
         }
-        if m(V) != N {
-            return gomas.NewError(gomas.ESIZE, "BDSvd")
-        }
-        if flags & gomas.WANTU != 0 && m(V) != n(U) {
+        if m(V) < N {
             return gomas.NewError(gomas.ESIZE, "BDSvd")
         }
         vv = V

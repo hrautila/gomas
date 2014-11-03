@@ -528,6 +528,10 @@ func TRDReduce(A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) *
     var err *gomas.Error = nil
     var Y cmat.FloatMatrix
 
+    // default to lower triangular if uplo not defined
+    if flags & (gomas.LOWER|gomas.UPPER) == 0 {
+        flags = flags | gomas.LOWER
+    }
     ok := m(A) == n(A) && tau.Len() >= n(A)
     if ! ok {
         return gomas.NewError(gomas.ESIZE, "ReduceTridiag")
@@ -577,6 +581,15 @@ func TRDMult(C, A, tau, W *cmat.FloatMatrix, flags int, confs... *gomas.Config) 
     var err *gomas.Error = nil
     var Ch, Qh, tauh cmat.FloatMatrix
     
+    // default to multiply from left if side not defined
+    if flags & (gomas.LEFT|gomas.RIGHT) == 0 {
+        flags = flags | gomas.LEFT
+    }
+    // default to lower triangular if uplo not defined
+    if flags & (gomas.LOWER|gomas.UPPER) == 0 {
+        flags = flags | gomas.LOWER
+    }
+
     if flags & gomas.LOWER != 0 {
         if flags & gomas.LEFT != 0 {
             Ch.SubMatrix(C, 1, 0, m(C)-1, n(C))

@@ -5,7 +5,7 @@
 // distributed under the terms of GNU Lesser General Public License Version 3, or
 // any later version. See the COPYING file included in this archive.
 
-package main
+package test
 
 import (
     "github.com/hrautila/cmat"
@@ -13,16 +13,11 @@ import (
     "github.com/hrautila/gomas/blasd"
     "github.com/hrautila/gomas/lapackd"
     "testing"
-    "math"
+    //"math"
 )
 
 
-func asRow(d, s *cmat.FloatMatrix) *cmat.FloatMatrix {
-    d.SetBuf(1, s.Len(), 1, s.Data())
-    return d
-}
-
-func setDiagonals(A *cmat.FloatMatrix, kind int) string {
+func setTrdDiagonals(A *cmat.FloatMatrix, kind int) string {
     var sD, sEu, sEl cmat.FloatMatrix
     var desc string
     
@@ -63,20 +58,12 @@ func setDiagonals(A *cmat.FloatMatrix, kind int) string {
     return desc
 }
 
-// d = |d| - |s|
-func absMinus(d, s *cmat.FloatMatrix) *cmat.FloatMatrix {
-    for k := 0; k < d.Len(); k++ {
-        tmp := math.Abs(d.GetAt(k))
-        d.SetAt(k, math.Abs(s.GetAt(k))-tmp)
-    }
-    return d
-}
 
 func test_trdevd(N, flags, kind int, verbose bool, t *testing.T) {
     var At, sD, sE, tmp cmat.FloatMatrix
 
     A0 := cmat.NewMatrix(N, N)
-    desc := setDiagonals(A0, kind)
+    desc := setTrdDiagonals(A0, kind)
     At.SubMatrix(A0, 0, 0, N, N)
     sD.Diag(A0, 0)
     sE.Diag(A0, 1)
